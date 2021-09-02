@@ -1,0 +1,105 @@
+version: '2'
+services:
+  graylog-mongo:
+    image: "m4ch1n3s/mongo3"
+    restart: always
+    volumes:
+      - /graylog/data/mongo:/data/db
+  graylog-elasticsearch:
+    image: "m4ch1n3s/elasticsearch2"
+    restart: always
+    command: "elasticsearch -Des.cluster.name='graylog'"
+    volumes:
+      - /graylog/data/elasticsearch:/usr/share/elasticsearch/data
+    environment:
+      #Production 4g, testing 512m
+      ES_HEAP_SIZE: '4g'
+      #ES_HEAP_SIZE: '512m'
+  graylog:
+    image: "m4ch1n3s/graylog2"
+    restart: always
+    volumes:
+      - /graylog/data/journal:/usr/share/graylog/data/journal
+      - /graylog/config:/usr/share/graylog/data/config
+    environment:
+      GRAYLOG_PASSWORD_SECRET: C0nt3ntPr0t3ctP4ssWordGr4yL0g
+#      GRAYLOG_ROOT_PASSWORD_SHA2: 8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918
+      GRAYLOG_ROOT_PASSWORD_SHA2: 8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918
+      GRAYLOG_WEB_ENDPOINT_URI: http://127.0.0.1:9000/api
+#      GRAYLOG_TRANSPORT_EMAIL_ENABLED: 'true'
+#      GRAYLOG_TRANSPORT_EMAIL_HOSTNAME: 'smtp.office365.com'
+#      GRAYLOG_TRANSPORT_EMAIL_PORT: 587
+#      GRAYLOG_TRANSPORT_EMAIL_USE_AUTH: 'true'
+#      GRAYLOG_TRANSPORT_EMAIL_USE_TLS: 'true'
+#      GRAYLOG_TRANSPORT_EMAIL_USE_SSL: 'false'
+#      GRAYLOG_TRANSPORT_EMAIL_AUTH_USERNAME: 'your@email.com'
+#      GRAYLOG_TRANSPORT_EMAIL_AUTH_PASSWORD: 'secret'
+#      GRAYLOG_TRANSPORT_EMAIL_SUBJECT_PREFIX: '[GRAYLOG2]'
+#      GRAYLOG_TRANSPORT_EMAIL_FROM_EMAIL: 'your@email.com'
+      GRAYLOG_RING_SIZE: '16384'
+      GRAYLOG_INPUTBUFFER_RING_SIZE: '16384'
+      GRAYLOG_ELASTICSEARCH_HOSTS: http://elasticsearch:9200/
+      GRAYLOG_SERVER_JAVA_OPTS: '-Xms750m -Xmx1500m -XX:NewRatio=1 -XX:MaxMetaspaceSize=256m -server -XX:+ResizeTLAB -XX:+UseConcMarkSweepGC -XX:+CMSConcurrentMTEnabled -XX:+CMSClassUnloadingEnabled -XX:+UseParNewGC -XX:-OmitStackTraceInFastThrow'
+    links:
+      - graylog-mongo:mongo
+      - graylog-elasticsearch:elasticsearch
+    ports:
+      - "12201:12201/udp"
+      - "10514-10584:10514-10584/udp"
+      - "10514-10584:10514-10584"
+  graylog-proxy:
+    image: m4ch1n3s/apache_proxyssl
+    restart: always
+    stdin_open: true
+    tty: true
+    environment:
+      SERVER_NAME: graylog
+      SERVER_PORT: 9000
+      GRAYLOG_FQDN: graylog.mylocal.domain
+      GRAYLOG_FQDN_PORT: 9019
+    links:
+      - graylog
+    ports:
+      - "9019:443"
+
+  graylog-proxy-local-net:
+    image: m4ch1n3s/apache_proxyssl
+    stdin_open: true
+    tty: true
+    restart: always
+    environment:
+      SERVER_NAME: graylog
+      SERVER_PORT: 9000
+      GRAYLOG_FQDN: 192.168.11.102
+      GRAYLOG_FQDN_PORT: 9044
+    links:
+      - graylog
+    ports:
+      - "9044:443"
+
+  graylog-proxy-local-host:
+    image: m4ch1n3s/apache_proxyssl
+    stdin_open: true
+    tty: true
+    restart: always
+    environment:
+      SERVER_NAME: graylog
+      SERVER_PORT: 9000
+      GRAYLOG_FQDN: 127.0.0.1
+      GRAYLOG_FQDN_PORT: 9045
+    links:
+      - graylog
+    ports:
+      - "9045:443"
+  graylog-nxlog:
+    image: m4ch1n3s/nxlog
+    stdin_open: true
+    tty: true
+    restart: always
+    volumes:
+      - /ids1/:/ids1/
+      - /ids2/:/ids2/
+      - /home/asf/alerts/:/asf/
+      - /graylog/nxlog/:/data/conf/
+    links:
+      - graylog

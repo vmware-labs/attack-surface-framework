@@ -1,0 +1,26 @@
+#!/bin/bash
+
+if test "f$1" "==" "f"
+then echo "usage $0 modulename jobid"
+exit -1
+fi
+if test "f$2" "==" "f"
+then echo "usage $0 modulename jobid"
+exit -1
+fi
+declare MFOLDER="/opt/asf/redteam/$1"
+declare JFOLDER="/home/asf/jobs/$2"
+for n in `seq 0 9`
+do
+	VARNAME="ARG$n"
+	declare $VARNAME=""
+	if test -e "$JFOLDER/$n.cmdarg"
+	then 
+		declare $VARNAME="`cat "$JFOLDER/$n.cmdarg"`"
+	else
+		if test -e "$MFOLDER/$n.cmdarg"
+		then 
+			declare $VARNAME="`cat "$MFOLDER/$n.cmdarg"`"
+		fi
+	fi
+done

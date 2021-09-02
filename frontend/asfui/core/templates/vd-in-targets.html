@@ -1,0 +1,219 @@
+{% extends "layouts/base.html" %}
+
+{% block title %} Internal Target Domain {% endblock %} 
+
+<!-- Specific Page CSS goes HERE  -->
+{% block stylesheets %}{% endblock stylesheets %}
+
+{% block content %}
+{{ target_file }}
+<form class="navbar-form" action="vd-in-targets" method="post" enctype="multipart/form-data" style="display: inline;">
+ 			{%csrf_token%}
+              <span class="bmd-form-group"><div class="input-group no-border">
+                <input type="text" name='target_domain' value="" class="form-control" placeholder="New Target - IP or CIDR">
+                <input type="file" name="target_file">
+                <input type="hidden" name="target_action" value="new">
+                <button type="submit" class="btn btn-white btn-round btn-just-icon">
+                  <i class="material-icons">save</i>
+                  <div class="ripple-container"></div>
+                </button>
+              </div></span>
+</form>
+<form class="navbar-form" action="vd-export" method="post" style="display: inline;">
+	{%csrf_token%}
+          <span class="bmd-form-group"><div class="input-group no-border">
+ <input type="hidden" name="model" value="intargets">
+          <button type="submit" class="btn btn-white btn-round btn-just-icon">
+          <i class="material-icons">system_update_alt</i>
+          <div class="ripple-container"></div>
+          </button>
+          </div></span>
+</form>
+
+<!-- Pager  -->
+ <table width="100%">
+ <tr>
+ <td>
+<form class="navbar-form" action="vd-in-targets" method="post">
+ 			{%csrf_token%}
+             <span class="bmd-form-group"><div class="input-group no-border">
+             <input type="text" name='domain_search' value="{{ domain_search }}" class="form-control" placeholder="New Regex query">
+			 <input type="hidden" name="intargets_action" value="filter">
+             <button type="submit" class="btn btn-white btn-round btn-just-icon" rel="tooltip" title="" data-original-title="Search by Regular Expression">
+             <i class="material-icons">search</i>
+             <div class="ripple-container"></div>
+             </button>
+             </div></span>
+</form>
+ </td>
+  <td>
+ Objects: [{{ query_count }}]
+ </td>
+ <td>
+ <form class="navbar-form" action="vd-in-targets" method="post">
+ 			{%csrf_token%}
+             <span class="bmd-form-group"><div class="input-group no-border">
+             <input type="hidden" name='domain_search' value="{{ domain_search }}">
+			 <input type="hidden" name="intargets_action" value="filter">
+			 <input type="hidden" name="page" value="{{ query_page_prev }}">
+             <button type="submit" class="btn btn-white btn-round btn-just-icon" rel="tooltip" title="" data-original-title="Previous Page">
+             <i class="material-icons">skip_previous</i>
+             <div class="ripple-container"></div>
+             </button>
+             </div></span>
+</form>
+</td>
+<td>
+ Page [{{ query_page }}]
+</td>
+<td>
+<form class="navbar-form" action="vd-in-targets" method="post">
+ 			{%csrf_token%}
+             <span class="bmd-form-group"><div class="input-group no-border">
+             <input type="hidden" name='domain_search' value="{{ domain_search }}">
+			 <input type="hidden" name="intargets_action" value="filter">
+			 <input type="hidden" name="page" value="{{ query_page_next }}">
+             <button type="submit" class="btn btn-white btn-round btn-just-icon" rel="tooltip" title="" data-original-title="Next Page">
+             <i class="material-icons">skip_next</i>
+             <div class="ripple-container"></div>
+             </button>
+             </div></span>
+</form>
+</td>
+</tr>
+</table>
+<!-- End Pager  -->
+
+        <div class="row">
+            <div class="col-md-12">
+              <div class="card">
+                <div class="card-header card-header-primary">
+                  <h4 class="card-title ">Targets</h4>
+<!--                  <p class="card-category"> CIDR's, IP's, Domains</p> -->
+                </div>
+                <div class="card-body">
+                  <div class="table-responsive">
+                    <table class="table">
+                      <thead class=" text-primary">
+                        <th>
+                          Id
+                        </th>
+                        <th>
+                          Domain
+                        </th>
+                        <th>
+                          Type
+                        </th>
+                        <th>
+                          Last Report
+                        </th>
+                        <th>
+                          Count
+                        </th>
+                        <th style="text-align: center;">
+                          Tools
+                        </th>
+                      </thead>
+                      <tbody>
+{% for item in query_results %}
+                        <tr>
+                          <td>
+                            {{ item.id }}
+                          </td>
+                          <td>
+                            {{ item.name }}
+                          </td>
+                          <td>
+                            {{ item.type }}
+                          </td>
+                          <td>
+                            {{ item.lastdate }}
+                          </td>
+                          <td class="text-primary">
+                            {{ item.itemcount }}
+                          </td>
+                          <td style="text-align: center;">
+<!--                         <form method="post" action="vd-in-targets" style="display: inline;">
+                        {%csrf_token%}
+                          <input type="hidden" name="id" value="{{ item.id }}">
+                          <input type="hidden" name="target_action" value="filter">
+							<button type="submit" rel="tooltip" title="" class="btn btn-primary btn-link btn-sm" data-original-title="Run new Scan">
+                          	<i class="material-icons">dashboard</i>
+                        	</button>
+                        </form> -->
+                        <form method="post" action="vd-in-targets" style="display: inline;">
+                        {%csrf_token%}
+                          <input type="hidden" name="id" value="{{ item.id }}">
+                          <input type="hidden" name="target_action" value="delete">
+							<button type="submit" rel="tooltip" title="" class="btn btn-primary btn-link btn-sm" data-original-title="Remove">
+                          	<i class="material-icons">close</i>
+                        	</button>
+                        </form>
+                          </td>
+                        </tr>
+
+{% endfor %}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            </div>
+<!-- Pager  -->
+ <table width="100%">
+ <tr>
+ <td>
+<form class="navbar-form" action="vd-in-targets" method="post">
+ 			{%csrf_token%}
+             <span class="bmd-form-group"><div class="input-group no-border">
+             <input type="text" name='domain_search' value="{{ domain_search }}" class="form-control" placeholder="New Regex query">
+			 <input type="hidden" name="intargets_action" value="filter">
+             <button type="submit" class="btn btn-white btn-round btn-just-icon" rel="tooltip" title="" data-original-title="Search by Regular Expression">
+             <i class="material-icons">search</i>
+             <div class="ripple-container"></div>
+             </button>
+             </div></span>
+</form>
+ </td>
+  <td>
+ Objects: [{{ query_count }}]
+ </td>
+ <td>
+ <form class="navbar-form" action="vd-in-targets" method="post">
+ 			{%csrf_token%}
+             <span class="bmd-form-group"><div class="input-group no-border">
+             <input type="hidden" name='domain_search' value="{{ domain_search }}">
+			 <input type="hidden" name="intargets_action" value="filter">
+			 <input type="hidden" name="page" value="{{ query_page_prev }}">
+             <button type="submit" class="btn btn-white btn-round btn-just-icon" rel="tooltip" title="" data-original-title="Previous Page">
+             <i class="material-icons">skip_previous</i>
+             <div class="ripple-container"></div>
+             </button>
+             </div></span>
+</form>
+</td>
+<td>
+ Page [{{ query_page }}]
+</td>
+<td>
+<form class="navbar-form" action="vd-in-targets" method="post">
+ 			{%csrf_token%}
+             <span class="bmd-form-group"><div class="input-group no-border">
+             <input type="hidden" name='domain_search' value="{{ domain_search }}">
+			 <input type="hidden" name="intargets_action" value="filter">
+			 <input type="hidden" name="page" value="{{ query_page_next }}">
+             <button type="submit" class="btn btn-white btn-round btn-just-icon" rel="tooltip" title="" data-original-title="Next Page">
+             <i class="material-icons">skip_next</i>
+             <div class="ripple-container"></div>
+             </button>
+             </div></span>
+</form>
+</td>
+</tr>
+</table>
+<!-- End Pager  -->
+
+{% endblock content %}
+
+<!-- Specific Page JS goes HERE  -->
+{% block javascripts %}{% endblock javascripts %}

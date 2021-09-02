@@ -1,0 +1,1 @@
+The place for removed logo

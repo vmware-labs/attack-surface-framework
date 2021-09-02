@@ -1,0 +1,292 @@
+{% extends "layouts/base.html" %}
+
+{% block title %} RedTeam Modules and Jobs {% endblock %} 
+
+<!-- Specific Page CSS goes HERE  -->
+{% block stylesheets %}{% endblock stylesheets %}
+
+{% block content %}
+<h4>
+{{ error }}
+</h4>
+ Create new Job
+ <script type="text/javascript">
+<!--
+let SearchList = new Array()
+let OldSearchKey = ""
+function search_msf_module(SuchForm){
+	//Retrieving Data from droplist, just once for all
+	 DropList = SuchForm.exploit
+	 if (SearchList.length < 1){
+		 for (i=0; i<DropList.options.length; i++){
+			 SearchList.push(DropList.options[i].value)
+		 }
+	 }
+	//Filtering the list and reload the droplist
+	FilterKey=SuchForm.ExploitFilter.value
+	if (OldSearchKey==FilterKey){
+		return
+	}else{
+		OldSearchKey=FilterKey
+	}
+	//Removing all elements
+	DropListLength=DropList.length-1
+	for (i = DropListLength; i>=0; i--){
+		DropList.remove(i)
+	}
+	//Reload elements with matching criteria
+	for (i=0; i<SearchList.length;i++){
+		if (SearchList[i].indexOf(FilterKey)>=0){
+			option = document.createElement('option');
+			option.text = SearchList[i]
+			option.value=SearchList[i]
+			DropList.add(option)
+		}
+	}
+}
+//-->
+</script>
+ <form class="navbar-form" action="vd-redteam" method="post">
+ 			{%csrf_token%}
+             <span class="bmd-form-group"><div class="input-group no-border">
+             <input type="text" name='job_name' value="" class="form-control" placeholder="New Job Name">             
+             In:
+             <select name='job_input' class="form-control">
+             <option value="amass">Amass Output</option>
+             <option value="services">External PortScan</option>
+             <option value="inservices">Internal PortScan</option>
+             </select>
+             Filter:
+             <select name='job_regexp' class="form-control">
+{% for item in saved_regexp %}
+             <option value="{{ item.id }}">{{ item.name }}/{{ item.info }}</option>
+{% endfor %}
+             </select>
+             Module
+             <select name='job_module' class="form-control">
+{% for item in modules %}
+             <option value="{{ item.name }}">{{ item.name }}/{{ item.info }}</option>
+{% endfor %}
+             </select>
+			 <input type="hidden" name="job_action" value="create">
+             <button type="submit" class="btn btn-white btn-round btn-just-icon" rel="tooltip" title="" data-original-title="Create Job">
+             <i class="material-icons">save</i>
+             <div class="ripple-container"></div>
+             </button>
+             </div></span>
+</form>
+        <div class="row">
+            <div class="col-md-12">
+              <div class="card">
+                <div class="card-header card-header-primary">
+                  <h4 class="card-title ">Job LIst</h4>
+                  <p class="card-category"> Jobs Created with RegExp Deleted Info, will persist.</p>
+                </div>
+                <div class="card-body">
+                  <div class="table-responsive">
+                    <table class="table">
+                      <thead class=" text-primary">
+                        <th>
+                          Id
+                        </th>
+                        <th>
+                          Name
+                        </th>
+                        <th>
+                          Input
+                        </th>
+                        <th>
+                          Regular Expression
+                        </th>
+                        <th style="text-align: center;">
+                          Description
+                        </th>
+                        <th>
+                          Module
+                        </th>                        
+                        <th style="text-align: center;">
+                          Tools
+                        </th>
+                      </thead>
+                      <tbody>
+{% for item in jobs %}
+                        <tr>
+                          <td>
+                             {{ item.id }}
+                          </td>
+                          <td>
+                             {{ item.name }}
+                          </td>
+                          <td>
+                             {{ item.input }}
+                          </td>
+                           <td>
+                              I:{{ item.regexp }}<br> E:{{ item.exclude }}
+                          </td>
+                          <td class="text-primary">
+                            {{ item.info }}
+                          </td>
+                          <td>
+                             {{ item.module }}
+{% if item.module == "metasploit" %}
+<span onclick="row = document.getElementById('job_msf_{{ item.id }}'); if (row.style.display=='none') {row.style.display='';}else{row.style.display='none';}">
+<button type="submit" class="btn btn-white btn-round btn-just-icon" rel="tooltip" title="" data-original-title="Customize Metasploit Module">
+<i class="material-icons">build_circle</i>
+</button>
+</span>
+{% endif %}
+                          </td>
+                          <td style="text-align: center;">
+ {% if item.id in running_jobs %}
+ <img src="static/assets/asf/wait.gif" width="45" height="50">
+ {% else %}
+<form class="navbar-form" action="vd-redteam" method="post" style="display: inline;">
+ 			{%csrf_token%}
+             <input type="hidden" name='job_id' value="{{ item.id }}" class="form-control">
+			 <input type="hidden" name="job_action" value="start">
+             <button type="submit" class="btn btn-white btn-round btn-just-icon"  rel="tooltip" title="" data-original-title="Start">
+             <i class="material-icons">play_arrow</i>
+             </button>
+</form>
+{% endif %}
+<form class="navbar-form" action="vd-redteam" method="post" style="display: inline;">
+ 			{%csrf_token%}
+             <input type="hidden" name='job_id' value="{{ item.id }}" class="form-control">
+			 <input type="hidden" name="job_action" value="stop">
+             <button type="submit" class="btn btn-white btn-round btn-just-icon" rel="tooltip" title="" data-original-title="Stop">
+             <i class="material-icons">stop</i>
+             </button>
+</form>
+<form class="navbar-form" action="vd-redteam" method="post" style="display: inline;">
+ 			{%csrf_token%}
+             <input type="hidden" name='job_id' value="{{ item.id }}" class="form-control">
+			 <input type="hidden" name="job_action" value="delete">
+             <button type="submit" class="btn btn-white btn-round btn-just-icon" rel="tooltip" title="" data-original-title="Delete Job">
+             <i class="material-icons">delete</i>
+             </button>
+</form>
+<span onclick="row = document.getElementById('job_reports_{{ item.id }}'); if (row.style.display=='none') {row.style.display='';}else{row.style.display='none';}">
+<button type="submit" class="btn btn-white btn-round btn-just-icon" rel="tooltip" title="" data-original-title="Show Reports">
+<i class="material-icons">assignment</i>
+</button>
+</span>
+<span onclick="row = document.getElementById('job_cmdargs_{{ item.id }}'); if (row.style.display=='none') {row.style.display='';}else{row.style.display='none';}">
+<button type="submit" class="btn btn-white btn-round btn-just-icon" rel="tooltip" title="" data-original-title="Modify Arguments">
+<i class="material-icons">build_circle</i>
+</button>
+</span>
+<span onclick="row = document.getElementById('job_schedule_{{ item.id }}'); if (row.style.display=='none') {row.style.display='';}else{row.style.display='none';}">
+<button type="submit" class="btn btn-white btn-round btn-just-icon" rel="tooltip" title="" data-original-title="Schedule this Job">
+<i class="material-icons">alarm_add</i>
+</button>
+</span>
+                          </td>
+                        </tr>
+<tr id="job_reports_{{ item.id }}" style="display: none;">
+	<td>.</td>
+	<td colspan="6">
+<ul>
+{% for report  in item.reports %}
+<li style="display:inline;"><a href="{{ report.file }}" target="_blank">{{ report.name }}</a></li>&nbsp;&nbsp;&nbsp;
+{% endfor %}
+</ul>
+	</td>
+</tr>
+<tr id="job_cmdargs_{{ item.id }}" style="display: none;">
+	<td>.</td>
+	<td colspan="6">
+<H5>ARGUMENT CUSTOMIZATION</H5>
+<pre>{{ item.hint }}</pre>
+<form class="navbar-form" action="vd-redteam" method="post" style="display: inline;">
+ 			{%csrf_token%}
+             <input type="hidden" name='job_id' value="{{ item.id }}" class="form-control">
+			 <input type="hidden" name="job_action" value="save_cmdargs">
+			{% for arg  in item.cmdargs %}
+				<input type="text" name='{{ arg.name }}' value="{{ arg.arg }}" class="form-control" placeholder="Argument {{ arg.name }}">
+			{% endfor %}
+             <button type="submit" class="btn btn-white btn-round btn-just-icon" rel="tooltip" title="" data-original-title="Save Command Arguments">
+             <i class="material-icons">save</i>
+             </button>
+</form>
+	</td>
+</tr>
+{% if item.module == "metasploit" %}
+<tr id="job_msf_{{ item.id }}" style="display: none;">
+	<td>.</td>
+	<td colspan="6">
+<H5>ARGUMENT CUSTOMIZATION FOR METASPLOIT</H5>
+<pre>{{ item.hint }}</pre>
+<form class="navbar-form" action="vd-redteam" method="post" style="display: inline;">
+ 			{%csrf_token%}
+             <input type="hidden" name='job_id' value="{{ item.id }}" class="form-control">
+			 <input type="hidden" name="job_action" value="msf_save">
+			 <b>EXPLOIT/FILTER</b>
+			 <input type="text" name="ExploitFilter" value="" onchange="search_msf_module(this.form)">
+			 <select name="exploit">
+			{% for module  in msf_modules %}
+				<option value="{{ module }}" {% if item.msf.exploit == module %}selected{% endif %}>{{ module }}</option>
+			{% endfor %}
+			</select><br>
+			 <b>PAYLOAD</b>
+			 <select name="payload">
+			{% for payload  in item.msf.payloads %}
+				<option value="{{ payload }}" {% if item.msf.payload == payload %}selected{% endif %}>{{ payload }}</option>
+			{% endfor %}
+			</select><br>			
+			{% for k,v in item.msf.items %}
+			{% if k != "exploit" and k != "payloads" and k != "payload" %}
+			<b>{{ k }}</b><input type="text" name='{{ k }}' value="{{ v }}" class="form-control" placeholder="Argument {{ k }}" size="50">
+			{% endif %}
+			{% endfor %}
+             <button type="submit" class="btn btn-white btn-round btn-just-icon" rel="tooltip" title="" data-original-title="Save Command Arguments">
+             <i class="material-icons">save</i>
+             </button>
+</form>
+	</td>
+</tr>
+{% endif %}
+
+<tr id="job_schedule_{{ item.id }}" style="display: none;">
+	<td>.</td>
+	<td colspan="6">
+<H5>SCHEDULE THIS JOB</H5>
+<form class="navbar-form" action="vd-redteam" method="post" style="display: inline;">
+ 			{%csrf_token%}
+             <input type="hidden" name='job_id' value="{{ item.id }}" class="form-control">
+			 <input type="hidden" name="job_action" value="schedule">
+			 {% for day in item.DaysOfWeek %}
+			 <input type="checkbox" name="{{ day }}" {% if day in item.Days %}checked{% endif %}><label>{{ day }}</label>&nbsp;&nbsp;&nbsp;
+			 {% endfor %}
+			 <input type="checkbox" name="Disabled" {% if item.Disabled == 'true' %}checked{% endif %}><label>Disabled</label>&nbsp;&nbsp;&nbsp;
+
+Hour:<select name="hour">
+			 {% for i in "x"|rjust:"24" %}
+			 <option value="{{ forloop.counter0 }}" {% if forloop.counter0 == item.Hour %}selected{% endif %}>{{ forloop.counter0 }}</option>
+			 {% endfor %}
+</select>&nbsp;&nbsp;&nbsp;
+Minute:<select name="minute">
+			 {% for i in "x"|rjust:"60" %}
+			 <option value="{{ forloop.counter0 }}" {% if forloop.counter0 == item.Minute %}selected{% endif %} >{{ forloop.counter0 }}</option>
+			 {% endfor %}
+</select>
+             <button type="submit" class="btn btn-white btn-round btn-just-icon" rel="tooltip" title="" data-original-title="Save Schedule">
+             <i class="material-icons">save</i>
+             </button>
+</form>
+	</td>
+</tr>
+
+{% endfor %}
+
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            </div>
+</div>
+
+{% endblock content %}
+
+<!-- Specific Page JS goes HERE  -->
+{% block javascripts %}{% endblock javascripts %}

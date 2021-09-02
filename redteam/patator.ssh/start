@@ -1,0 +1,41 @@
+#!/bin/bash
+
+if test "f$1" "=" "f"
+then 
+    echo "Error, please specify a JobID"
+    exit 1
+fi
+. /opt/asf/tools/scripts/arguments patator.ssh $1
+DATE_STAMP=`date +"%Y%m%d%H%M%S"`
+JOB_FOLDERS="/home/asf/jobs"
+JOB_FOLDER="$JOB_FOLDERS/$1"
+JOB_OUTPUT_FOLDER="$JOB_FOLDER/$DATE_STAMP"
+TERM="xterm"
+if ! test -e "$JOB_FOLDER"
+then 
+    echo "Error, JobID $1 is invalid"
+    exit 1
+fi
+if test -e "JOB_FOLDER/.lock"
+then 
+	echo "Error, process is already running"
+	exit 1
+fi
+echo > "$JOB_FOLDER/.lock"
+cd /opt/asf/frontend/asfui
+. bin/activate
+python3 /opt/asf/frontend/asfui/manage.py remaster_input --input JobID:$1 --parser host --output "$JOB_FOLDER/app.input"
+mkdir -p $JOB_OUTPUT_FOLDER
+cp /opt/asf/tools/dicts/default.dict "$JOB_FOLDER/app.dict"
+cp /opt/asf/tools/dicts/users.dict "$JOB_FOLDER/app.users"
+for mode in input asf dict users
+do cp -v "$JOB_FOLDER/app.$mode" "$JOB_OUTPUT_FOLDER/app.$mode"
+done
+echo docker run --rm -v $JOB_OUTPUT_FOLDER/:/mnt m4ch1n3s/patator ssh_login host=FILE0 0=/mnt/app.input user=FILE1 1=/mnt/app.users auth_type=auto -y password=FILE2 2=/mnt/app.dict --auto-progress=1 -t 20 --rate-limit=3 --timeout=10 -x ignore:code!=0 -x free=host:code=0 -x free=user:code=0 -l /mnt/results/ 2>&1 \> "$JOB_OUTPUT_FOLDER/app.log" &
+docker run --rm -v $JOB_OUTPUT_FOLDER/:/mnt m4ch1n3s/patator ssh_login host=FILE0 0=/mnt/app.input user=FILE1 1=/mnt/app.users auth_type=auto -y password=FILE2 2=/mnt/app.dict --auto-progress=1 -t 20 --rate-limit=3 --timeout=10 -x ignore:code!=0 -x free=host:code=0 -x free=user:code=0 -l /mnt/results/ 2>&1 > "$JOB_OUTPUT_FOLDER/app.log" &
+JOB_PID=$!
+echo $JOB_PID>"$JOB_FOLDER/pid"
+wait $PID
+python3 /opt/asf/frontend/asfui/manage.py remaster_output --parser=patator.ssh --debug --input="$JOB_OUTPUT_FOLDER/results/RESULTS.csv" --output=JobID:$1 
+rm -v "$JOB_FOLDER/pid"
+rm -v "$JOB_FOLDER/.lock"

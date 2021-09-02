@@ -1,0 +1,138 @@
+<!--     <div class="sidebar" data-color="azure" data-background-color="black" data-image="/static/assets/img/sidebar-1.jpg"> -->
+    <div class="sidebar" data-color="azure" data-background-color="black">
+      <div class="logo" style="text-align: center;">
+<!--         <a target="_blank" rel="noopener noreferrer" 
+           target="_blank" rel="noopener noreferrer" 
+           href="https://www.creative-tim.com/product/material-dashboard-django" class="simple-text logo-normal">
+          </a>
+          
+          <img src="/static/assets/asf/logo2.png" width="50%">
+ -->
+      </div>
+      {% if user.is_authenticated %}
+      <div class="sidebar-wrapper">
+        <ul class="nav">
+           <li class="nav-item {% if 'vd-dashboard' in segment or 'vd-targets' in segment or 'vd-amass' in segment or 'vd-portscan' in segment %} active {% endif %}">
+            <a class="nav-link" href="/vd-targets">
+              <i class="material-icons">all_out</i>
+              External
+            </a>
+          </li>
+        
+			<ul class="nav" style="margin-left: 30px">
+        <!--
+			        <li class="nav-item {% if 'vd-dashboard' == segment %} active {% endif %}">
+            		<a class="nav-link" href="/vd-dashboard">
+              		<i class="material-icons">dashboard</i>
+              		<p>Dashboard</p>
+            		</a>
+          			</li>
+              -->
+		           <li class="nav-item {% if 'vd-targets' in segment %} active {% endif %}">
+		            <a class="nav-link" href="/vd-targets">
+		              <i class="material-icons">center_focus_strong</i>
+		              <p>Targets</p>
+		            </a>
+		          </li>
+		             <li class="nav-item {% if 'vd-amass' in segment %} active {% endif %}">
+		            <a class="nav-link" href="/vd-amass">
+		              <i class="material-icons">library_books</i>
+		              <p>Discovery</p>
+		            </a>
+		          </li>
+		            <li class="nav-item {% if 'vd-portscan' in segment %} active {% endif %}">
+		            <a class="nav-link" href="/vd-portscan">
+		              <i class="material-icons">bubble_chart</i>
+		              <p>Enumeration</p>
+		            </a>
+		          </li>
+		    </ul>
+		    </li>
+           <li class="nav-item {% if 'vd-in-dashboard' in segment or 'vd-in-targets' in segment or 'vd-in-portscan' in segment%} active {% endif %}">
+            <a class="nav-link" href="/vd-in-targets">
+              <i class="material-icons">input</i>
+             Internal
+            </a>		    
+		    <ul class="nav"  style="margin-left: 30px">
+<!--		    		 <li class="nav-item {% if 'vd-in-dashboard' == segment %} active {% endif %}">
+            		<a class="nav-link" href="/vd-in-dashboard">
+              		<i class="material-icons">dashboard</i>
+              		<p>Dashboard</p>
+            		</a>
+          			</li>
+              -->
+		           <li class="nav-item {% if 'vd-in-targets' in segment %} active {% endif %}">
+		            <a class="nav-link" href="/vd-in-targets">
+		              <i class="material-icons">center_focus_strong</i>
+		              <p>Targets</p>
+		            </a>
+		          	</li>
+	            	<li class="nav-item {% if 'vd-in-portscan' in segment %} active {% endif %}">
+		            <a class="nav-link" href="/vd-in-portscan">
+		              <i class="material-icons">bubble_chart</i>
+		              <p>Enumeration</p>
+		            </a>
+		          	</li>
+		    </ul>
+		    </li>
+           <li class="nav-item {% if 'vd-redteam' in segment %} active {% endif %}">
+            <a class="nav-link" href="/vd-redteam">
+              <i class="material-icons">home</i>
+              <p>Red Team</p>
+            </a>
+          </li>
+<!--
+             <li class="nav-item {% if 'ui-typography' in segment %} active {% endif %}">
+            <a class="nav-link" href="/ui-typography.html">
+              <i class="material-icons">library_books</i>
+              <p>Typography</p>
+            </a>
+          </li>
+ -->
+<!--            <li class="nav-item {% if 'ui-maps' in segment %} active {% endif %}">
+            <a class="nav-link" href="/ui-maps.html">
+              <i class="material-icons">location_ons</i>
+              <p>Maps</p>
+            </a>
+          </li>
+          <li class="nav-item {% if 'ui-notifications' in segment %} active {% endif %}">
+            <a class="nav-link" href="/ui-notifications.html">
+              <i class="material-icons">notifications</i>
+              <p>Notifications</p>
+            </a>
+          </li>
+
+           <li class="nav-item ">
+            <a class="nav-link" href="/page-rtl-support.html">
+              <i class="material-icons">language</i>
+              <p>RTL Support</p>
+            </a>
+          </li>
+ -->
+          <li class="nav-item ">
+            <a class="nav-link" href="{% url 'logout' %}" >
+              <i class="material-icons">directions_run</i>
+              <p>Logout</p>
+            </a>
+          </li>
+
+<!--           <li class="nav-item active-pro ">
+            <a target="_blank" rel="noopener noreferrer"  
+               class="nav-link" 
+               href="https://www.creative-tim.com/product/material-dashboard-django">
+              <i class="material-icons">unarchive</i>
+              <p>See product</p>
+            </a>
+          </li> -->
+<!--         <li class="nav-item {% if 'page-user' in segment %} active {% endif %}">
+            <a class="nav-link" href="/page-user.html">
+              <i class="material-icons">person</i>
+              <p>User Profile</p>
+            </a>
+          </li>
+        -->
+        </ul>
+      </div>
+      {% endif %}
+
+    </div>

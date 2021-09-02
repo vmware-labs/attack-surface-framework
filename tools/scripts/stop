@@ -1,0 +1,19 @@
+#!/bin/bash
+
+if test "f$1" "=" "f"
+then 
+    echo "Error, please specify a JobID"
+    exit 1
+fi
+JOB_FOLDERS="/home/asf/jobs"
+JOB_FOLDER="$JOB_FOLDERS/$1"
+if test -e "$JOB_FOLDER/pid"
+then
+PID = `cat "$JOB_FOLDER/pid"`
+	kill -SIGTERM $PID
+	sleep 5
+	kill -SIGKILL $PID
+	sleep 5
+	rm -v "$JOB_FOLDER/pid"
+	rm -v "$JOB_FOLDER/.lock"
+fi

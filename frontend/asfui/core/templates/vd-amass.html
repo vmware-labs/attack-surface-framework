@@ -1,0 +1,268 @@
+{% extends "layouts/base.html" %}
+
+{% block title %} Amass Reports {% endblock %} 
+
+<!-- Specific Page CSS goes HERE  -->
+{% block stylesheets %}{% endblock stylesheets %}
+
+{% block content %}
+        <div class="row">
+            <div class="col-md-12">
+              <div class="card">
+                <div class="card-header card-header-primary">
+                  <h4 class="card-title ">Amass</h4>
+                  <p class="card-category"> External Discovery</p>
+                </div>
+                <div class="card-body">
+                  <div class="table-responsive">
+                    <table class="table">
+<tr>
+<td>
+{% if running %}
+Amass running
+{% else %}
+Amass waiting
+{% endif %}
+</td>
+<td>
+{% if running %}
+<img src="static/assets/asf/wait.gif" width="45" height="50">
+{% endif %}
+</td>
+<td>
+<form class="navbar-form" action="vd-amass" method="post" style="display: inline;">
+ 			{%csrf_token%}
+              <span class="bmd-form-group"><div class="input-group no-border">
+ {% if running %}
+ <input type="hidden" name="amass_action" value="stop">
+                <button type="submit" class="btn btn-white btn-round btn-just-icon" rel="tooltip" title="" data-original-title="Stop Amass">
+                  <i class="material-icons">stop</i>
+                  <div class="ripple-container"></div>
+                </button>
+  {% else %}
+ <input type="hidden" name="amass_action" value="start">
+                <button type="submit" class="btn btn-white btn-round btn-just-icon" rel="tooltip" title="" data-original-title="Start Amass Service">
+                  <i class="material-icons">play_arrow</i>
+                  <div class="ripple-container"></div>
+                </button> 
+ {% endif %}
+               </div></span>
+</form>
+</td><td>
+ <form class="navbar-form" action="vd-export" method="post" style="display: inline;">
+ 			{%csrf_token%}
+             <span class="bmd-form-group"><div class="input-group no-border">
+			 <input type="hidden" name="model" value="amass">
+             <button type="submit" class="btn btn-white btn-round btn-just-icon" rel="tooltip" title="" data-original-title="Export All Hosts in TSV">
+             <i class="material-icons">system_update_alt</i>
+             <div class="ripple-container"></div>
+             </button>
+             </div></span>
+</form>
+</td><td>
+ <form class="navbar-form" action="vd-amass" method="post" style="display: inline;">
+ 			{%csrf_token%}
+             <span class="bmd-form-group"><div class="input-group no-border">
+			 <input type="hidden" name="amass_action" value="partial_load">
+             <button type="submit" class="btn btn-white btn-round btn-just-icon" rel="tooltip" title="" data-original-title="Partial Load">
+             <i class="material-icons">downloading</i>
+             <div class="ripple-container"></div>
+             </button>
+             </div></span>
+</form>
+</td><td>
+			<span onclick="row = document.getElementById('systemd.timer'); if (row.style.display=='none') {row.style.display='';}else{row.style.display='none';}" style="display: inline;">
+			<button type="submit" class="btn btn-white btn-round btn-just-icon" rel="tooltip" title="" data-original-title="Schedule Service">
+			<i class="material-icons">alarm_add</i>
+			</button>
+			</span>
+</td>
+</tr>
+                    </table>
+<div id="systemd.timer" style="display: none;" align="left">
+<h3>Schedule Scan Process</h3>
+    <form class="navbar-form" action="vd-amass" method="post" style="display: inline;">
+ 			{%csrf_token%}
+             <span class="bmd-form-group"><div class="input-group no-border">
+			 <input type="hidden" name="amass_action" value="schedule">
+			 <table>
+			 <tr>
+			 <td colspan="10">
+			 {% for day in DaysOfWeek %}
+			 <input type="checkbox" name="{{ day }}" {% if day in Days %}checked{% endif %}><label>{{ day }}</label>&nbsp;&nbsp;&nbsp;
+			 {% endfor %}
+			 <input type="checkbox" name="Disabled" {% if Disabled == 'true' %}checked{% endif %}><label>Disabled</label>&nbsp;&nbsp;&nbsp;
+			 </td>
+			 </tr>
+			 <tr>
+			 <td align="right">
+			 <h4>Hour:</h4>
+			 </td>
+			 <td align="left">
+			 <select name="hour">
+			 {% for i in "x"|rjust:"24" %}
+			 <option value="{{ forloop.counter0 }}" {% if forloop.counter0 == Hour %}selected{% endif %}>{{ forloop.counter0 }}</option>
+			 {% endfor %}
+			 </select>
+			 </td>
+			 <td align="right">
+			 <h4>Minute:</h4>
+			 </td>
+			 <td align="left">
+			 <select name="minute">
+			 {% for i in "x"|rjust:"60" %}
+			 <option value="{{ forloop.counter0 }}" {% if forloop.counter0 == Minute %}selected{% endif %} >{{ forloop.counter0 }}</option>
+			 {% endfor %}
+			 </select>
+			 </td>
+			 <td>
+             <button type="submit" class="btn btn-white btn-round btn-just-icon" rel="tooltip" title="" data-original-title="Save Scheduling">
+             <i class="material-icons">save</i>
+             <div class="ripple-container"></div>
+             </button>
+             </td>
+             <td></td><td></td><td></td><td></td><td></td>
+             </tr>
+             </table>
+             </div>
+             </span>
+	</form>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+</div>
+ 				<!-- {{ running }} -->
+ <table width="100%">
+ <tr>
+ <td>
+<form class="navbar-form" action="vd-amass" method="post">
+ 			{%csrf_token%}
+             <span class="bmd-form-group"><div class="input-group no-border">
+             <input type="text" name='domain_search' value="{{ domain_search }}" class="form-control" placeholder="New Regex query">
+			 <input type="hidden" name="amass_action" value="filter">
+             <button type="submit" class="btn btn-white btn-round btn-just-icon" rel="tooltip" title="" data-original-title="Search by Regular Expression">
+             <i class="material-icons">search</i>
+             <div class="ripple-container"></div>
+             </button>
+             </div></span>
+</form>
+ </td>
+  <td>
+ Objects: [{{ query_count }}]
+ </td>
+ <td>
+ <form class="navbar-form" action="vd-amass" method="post">
+ 			{%csrf_token%}
+             <span class="bmd-form-group"><div class="input-group no-border">
+             <input type="hidden" name='domain_search' value="{{ domain_search }}">
+			 <input type="hidden" name="amass_action" value="filter">
+			 <input type="hidden" name="page" value="{{ query_page_prev }}">
+             <button type="submit" class="btn btn-white btn-round btn-just-icon" rel="tooltip" title="" data-original-title="Previous Page">
+             <i class="material-icons">skip_previous</i>
+             <div class="ripple-container"></div>
+             </button>
+             </div></span>
+</form>
+</td>
+<td>
+ Page [{{ query_page }}]
+</td>
+<td>
+<form class="navbar-form" action="vd-amass" method="post">
+ 			{%csrf_token%}
+             <span class="bmd-form-group"><div class="input-group no-border">
+             <input type="hidden" name='domain_search' value="{{ domain_search }}">
+			 <input type="hidden" name="amass_action" value="filter">
+			 <input type="hidden" name="page" value="{{ query_page_next }}">
+             <button type="submit" class="btn btn-white btn-round btn-just-icon" rel="tooltip" title="" data-original-title="Next Page">
+             <i class="material-icons">skip_next</i>
+             <div class="ripple-container"></div>
+             </button>
+             </div></span>
+</form>
+</td>
+</tr>
+</table>
+        <div class="row">
+            <div class="col-md-12">
+              <div class="card">
+                <div class="card-header card-header-primary">
+                  <h4 class="card-title ">Discovered Assets</h4>
+<!--                  <p class="card-category"> Main input for enumeration</p> -->
+                </div>
+                <div class="card-body">
+                  <div class="table-responsive">
+                    <table class="table">
+                      <thead class=" text-primary">
+                        <th>
+                          Id
+                        </th>
+                        <th>
+                          Finding
+                        </th>
+                        <th>
+                          Type
+                        </th>
+                        <th>
+                          Tags
+                        </th>
+                        <th>
+                          Last Report
+                        </th>
+                        <th>
+                          Count
+                        </th>
+                        <th style="text-align: center;">
+                          Tools
+                        </th>
+                      </thead>
+                      <tbody>
+{% for item in query_results %}
+                        <tr>
+                          <td>
+                            {{ item.id }}
+                          </td>
+                          <td>
+                            {{ item.name }}
+                          </td>
+                          <td>
+                            {{ item.type }}
+                          </td>
+                          <td>
+                            {{ item.tags }}
+                          </td>                          
+                          <td>
+                            {{ item.lastdate }}
+                          </td>
+                          <td class="text-primary">
+                            {{ item.itemcount }}
+                          </td>
+                          <td style="text-align: center;">
+ <form class="navbar-form" action="vd-amass" method="post" style="display: inline;">
+ 			{%csrf_token%}
+             <span class="bmd-form-group"><div class="input-group no-border">
+			 <input type="hidden" name="amass_action" value="delete">
+			 <input type="hidden" name="id" value="{{ item.id }}">
+             <button type="submit" class="btn btn-white btn-round btn-just-icon" rel="tooltip" title="" data-original-title="Delete Host">
+             <i class="material-icons">delete</i>
+             <div class="ripple-container"></div>
+             </button>
+             </div></span>
+</form>
+                          </td>
+                        </tr>
+
+{% endfor %}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+{% endblock content %}
+
+<!-- Specific Page JS goes HERE  -->
+{% block javascripts %}{% endblock javascripts %}
