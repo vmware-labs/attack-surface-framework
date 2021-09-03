@@ -24,7 +24,7 @@ Latest version of Kali Linux (tested on 64 bits) - https://kali.org/get-kali/
 
 As root
 
-1. `git clone to /opt/asf`
+1. `git clone https://github.com/vmware-labs/attack-surface-framework.git /opt/asf`
 2. `cd /opt/asf/`
 3. Run `./setup.sh`
 4. Assign youruser, email and yourpass
@@ -129,3 +129,5 @@ https://www.metasploit.com
 https://www.kalilinux.org
 
 https://www.graylog.org/products/open-source
+
+https://github.com/wpscanteam/wpscan
