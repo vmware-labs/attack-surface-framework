@@ -77,7 +77,7 @@ A.2 Discovery - Module that runs the Amass process to discover publicly exposed 
 
 ![Discovery](images/Discovery.jpg)
 
-A.3 Enumeration - Module that runs the NMAP process to enumerate ports/services and create filters for the Redteam module. 
+A.3 Enumeration - Module that runs the NMAP process to enumerate ports/services and create filters for the Redteam module. Default setup is to look for `--top-ports 200` but you can suit it to your needs in /opt/asf/tools/nmap/*.sh
 
 ![Enumeration](images/Enumeration.jpg)
 
