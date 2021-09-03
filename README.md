@@ -73,7 +73,7 @@ A.1 Targets - Here is where you input your targets
 
 ![Targets](images/Targets.jpg)
 
-A.2 Discovery - Module that runs the Amass process to discover publicly exposed assets.
+A.2 Discovery - Module that runs the Amass process to discover publicly exposed assets, feel free to create your configuration file to setup your API keys https://github.com/OWASP/Amass/blob/master/examples/config.ini
 
 ![Discovery](images/Discovery.jpg)
 
