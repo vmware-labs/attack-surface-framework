@@ -145,3 +145,7 @@ https://www.graylog.org/products/open-source
 https://github.com/wpscanteam/wpscan
 
 https://github.com/vanhauser-thc/thc-hydra
+
+## Presented at Blackhat Arsenal
+
+https://www.blackhat.com/us-21/arsenal/schedule/index.html#vdoberman-24096
