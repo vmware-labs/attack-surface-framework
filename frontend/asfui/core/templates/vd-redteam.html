@@ -269,6 +269,12 @@ Minute:<select name="minute">
 			 <option value="{{ forloop.counter0 }}" {% if forloop.counter0 == item.Minute %}selected{% endif %} >{{ forloop.counter0 }}</option>
 			 {% endfor %}
 </select>
+Repeat (0=no):<select name="repeat">
+			 {% for i in "x"|rjust:"60" %}
+			 <option value="{{ forloop.counter0 }}" {% if forloop.counter0 == item.Repeat %}selected{% endif %} >{{ forloop.counter0 }}</option>
+			 {% endfor %}
+</select>
+
              <button type="submit" class="btn btn-white btn-round btn-just-icon" rel="tooltip" title="" data-original-title="Save Schedule">
              <i class="material-icons">save</i>
              </button>

@@ -18,6 +18,7 @@ class vdTarget(models.Model):
     lastdate = models.DateTimeField(auto_now=True)
     itemcount = models.IntegerField(default=0)
     type = models.CharField(max_length=100, default='DOMAIN')
+    tag = models.CharField(max_length=100, default='DEFAULT')
     
     def __str__(self):
         return self.name.lower()
@@ -28,6 +29,7 @@ class vdInTarget(models.Model):
     lastdate = models.DateTimeField(auto_now=True)
     itemcount = models.IntegerField(default=0)
     type = models.CharField(max_length=100, default='DOMAIN')
+    tag = models.CharField(max_length=100, default='DEFAULT')
     
     def __str__(self):
         return self.name.lower()

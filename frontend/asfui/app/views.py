@@ -24,6 +24,8 @@ import json
 import hashlib
 from app.systemd import sdService, DaysOfWeek
 from app.metasploitbr import *
+from app.targets import *
+
 GENERAL_PAGE_SIZE = 50
 
 def pager(context, page, page_size, count):
@@ -50,8 +52,15 @@ def search(RegExp, Model_NAME, ExcludeRegExp = ""):
     sys.stderr.write("Starting search function for module:"+Model_NAME+" with Regexp:"+RegExp+" Excluding:"+ExcludeRegExp+"\n")
     def add_hosts(partial, results):
         sys.stderr.write("[SEARCH]: merging hosts from query\n")
+#         partial = partial.values_list()
+#         results.append(partial)
+#        results.union(partial)
         results = results | partial
         sys.stderr.write("[APPEND]:"+str(results)+"\n")
+#         for host in partial:
+#             if host not in results:
+#                 sys.stderr.write("[APPEND]:"+str(host)+"\n")
+#                 results.append(host)
         return results
     
     def search_services(RegExp, ExcludeRegExp):
@@ -157,35 +166,12 @@ def targets(request):
     context['segment'] = 'vd-targets'
 #Add new domain or target
     def target_new():
-        if 'target_domain' in request.POST:
-            domain = request.POST['target_domain'].strip()
-            if not domain == "":
-                #NewTarget=vdTarget(name=request.POST['target_domain'])
-                #NewTarget.save()
-                Type = autodetectType(domain)
-                vdTarget.objects.update_or_create(name=domain, defaults={'type': Type})
-            if 'target_file' in request.FILES:
-                target_file = request.FILES['target_file']
-                fs = FileSystemStorage()
-                filename = fs.save(target_file.name, target_file)
-                uploaded_file_url = fs.url(filename)
-                context['target_file'] = uploaded_file_url
-                addDomFiles = open(filename, "r")
-                for domain in addDomFiles:
-                    domain = domain.strip()
-                    Type = autodetectType(domain)
-                    try:
-                        #NewTarget=vdTarget(name=domain.strip(), type=Type)
-                        #NewTarget.save()
-                        vdTarget.objects.update_or_create(name=domain, defaults={'type': Type})
-                    except:
-                        sys.stderr.write("Duplicated Target, Skipping:"+domain)
+        target_new_model(vdTarget,vdServices,request,context,autodetectType,delta)
 #Delete a target
     def target_delete():
-        if 'id' in request.POST:
-            id=request.POST['id']
-            DeleteTarget = vdTarget.objects.filter(id=id)
-            DeleteTarget.delete()
+        target_delete_model(vdTarget,vdServices,request,context,autodetectType,delta)
+        
+#Dirty solution since python lacks of switch case :\
     action={'new':target_new, 'delete':target_delete}
     if 'target_action' in request.POST:
         if request.POST['target_action'] in action:
@@ -269,35 +255,13 @@ def intargets(request):
     context['segment'] = 'vd-in-targets'
 #Add new domain or target
     def target_new():
-        if 'target_domain' in request.POST:
-            domain = request.POST['target_domain'].strip()
-            if not domain == "":
-                #NewTarget=vdInTarget(name=request.POST['target_domain'])
-                #NewTarget.save()
-                Type = autodetectType(domain)
-                vdInTarget.objects.update_or_create(name=domain, defaults={'type': Type})
-            if 'target_file' in request.FILES:
-                target_file = request.FILES['target_file']
-                fs = FileSystemStorage()
-                filename = fs.save(target_file.name, target_file)
-                uploaded_file_url = fs.url(filename)
-                context['target_file'] = uploaded_file_url
-                addDomFiles = open(filename, "r")
-                for domain in addDomFiles:
-                    domain = domain.strip()
-                    Type = autodetectType(domain)
-                    try:
-                        #NewTarget=vdInTarget(name=domain.strip())
-                        #NewTarget.save()
-                        vdInTarget.objects.update_or_create(name=domain, defaults={'type': Type})
-                    except:
-                        sys.stderr.write("Duplicated InTarget, Skipping:"+domain)
+        target_new_model(vdInTarget,vdInServices,request,context,autodetectType,delta)
+        
 #Delete a target
     def target_delete():
-        if 'id' in request.POST:
-            id=request.POST['id']
-            DeleteTarget = vdInTarget.objects.filter(id=id)
-            DeleteTarget.delete()
+        target_delete_model(vdInTarget,vdInServices,request,context,autodetectType,delta)
+        
+#Same dirty solution 
     action={'new':target_new, 'delete':target_delete}
     if 'target_action' in request.POST:
         if request.POST['target_action'] in action:
@@ -395,6 +359,7 @@ def amass(request):
         AmassService.write()
         return True
     
+#Same dirty solution
     action={'start':amass_start, 'stop':amass_stop, 'delete':amass_delete, 'total_purge':amass_total_purge, 'partial_load':amass_partial_load, 'schedule':amass_schedule}
     if 'amass_action' in request.POST:
         if request.POST['amass_action'] in action:
@@ -545,6 +510,7 @@ def portscan(request):
         ExNmap.write()
         return
     
+#Same dirty solution
     action={'start':nmap_start, 'stop':nmap_stop, 'save_regexp':nmap_save_regexp, 'delete_regexp':nmap_delete_regexp, 'delete':nmap_delete, 'schedule':nmap_schedule}
     if 'nmap_action' in request.POST:
         if request.POST['nmap_action'] in action:
@@ -611,7 +577,14 @@ def inportscan(request):
         
 #start Nmap
     def nmap_start():
+#         Targets=vdInTarget.objects.all()
+#         FileTargets=open("/home/nmap.int/targets.txt",'w+')
+#         for target in Targets:
+#             FileTargets.write(target.name+"\n")
+#         sys.stdout.write("Staring Nmap for Internal Networks")
+#         FileTargets.close()
         subprocess.Popen(["nohup", "/opt/asf/tools/nmap/nmap.int.sh"])
+        #os.system("nohup /opt/asf/tools/nmap/nmap.sh")
         context['running'] = True
 
 #stop Nmap
@@ -620,6 +593,8 @@ def inportscan(request):
         subprocess.Popen(["killall", "nmap.int.sh"])
         if path.exists("/home/nmap.int/reports/nmap.lock"):
             os.remove("/home/nmap.int/reports/nmap.lock")
+        #We should not kill nmap, because external nmap could be running.
+        #subprocess.Popen(["killall", "nmap"])
         os.system("killall nmap.int")
         context['running'] = False
         
@@ -672,6 +647,7 @@ def inportscan(request):
         InNmap.write()
         return
     
+#Same dirty solution
     action={'start':nmap_start, 'stop':nmap_stop, 'save_regexp':nmap_save_regexp, 'delete_regexp':nmap_delete_regexp, 'delete':nmap_delete, 'schedule': nmap_schedule}
     if 'nmap_action' in request.POST:
         if request.POST['nmap_action'] in action:
@@ -704,7 +680,8 @@ def redteam(request):
                         info.rstrip("\n")
                         info_file.close()
                     modules.append({"name":inode, "last_report":tstring, "current_report":tstring, "info":info})
-        #Line Below used when the program did not complete
+        #Below line was used when the program did not complete
+        #modules.append({"name":"wget", "last_report":tstring, "current_report":tstring, "info":"This is an example2"})
         return modules
     
     def detect_running_jobs(JobsArray):
@@ -717,6 +694,8 @@ def redteam(request):
         return RunningJobs
     
     def retrieve_metadata(JobsArray):
+        #This function suddnely does much more than detect reports, also pass it trow cmdargs and scheduling, there is no way to split it in other functions
+        #Perhaps a proper clear way should be changing the name of this function, populate_info, or retrieve_current_info, or something like that
         NUMERICAL_REGEXP = re.compile("[0-9]*")
         REPORT_REGEXP = ["**/*.[tT][xX][tT]", "**/*.[hH][tT][mM][lL]*", "**/*.[cC][sS][vV]", "**/*.[nN][mM][aA][pP]"] 
         CMDARG_REGEXP = re.compile("\d+\.cmdarg")
@@ -728,19 +707,24 @@ def redteam(request):
             JOB_CMDARGS = []
             JOB_FOLDER = JOBS_FOLDER+str(Job.id)+"/"
             JOB_MODULE = "/opt/asf/redteam/"+Job.module+"/"
+            #sys.stderr.write(JOB_FOLDER+"\n")
             if path.exists(JOB_FOLDER):
                 for inode in os.listdir(JOB_FOLDER):
                     if path.isdir(JOB_FOLDER+inode) and NUMERICAL_REGEXP.match(JOB_FOLDER+inode):
+                        #sys.stderr.write(inode+"\n")
                         for pattern in REPORT_REGEXP:
                             for recursive_inode in pathlib.Path(JOB_FOLDER+inode).glob(pattern):
                                 FCOMP = "/static/jobs/"+str(Job.id)+"/"+inode+"/"+str(recursive_inode).rsplit("/"+inode+"/", 4)[1]
                                 JOB_REPORTS.append({'name':inode, 'file':FCOMP})
+                                #sys.stderr.write(str(recursive_inode)+":"+FCOMP+"\n")
             if path.exists(JOB_MODULE):
                 sys.stderr.write(JOB_MODULE+"\n")
                 for inode in os.listdir(JOB_MODULE):
+                    #sys.stderr.write(inode+"\n")
                     if path.isfile(JOB_MODULE+inode) and CMDARG_REGEXP.match(inode):
+                        #sys.stderr.write("Match:"+inode+"\n")
                         NARG = NUMERICAL_REGEXP.findall(inode)[0]
-                        #Handling override by Job
+                        #Handling the override by Job
                         if path.isfile(JOB_FOLDER+inode):
                             ARGFILE = open(JOB_FOLDER+inode,'r')
                         else:
@@ -764,7 +748,8 @@ def redteam(request):
             JobSch.read()
             JobSch.setContext(JobSchInfo)
             
-            NEW_JOBS_ARRAY.append({'id':Job.id, 'name':Job.name, 'regexp':Job.regexp, 'exclude':Job.exclude, 'input':Job.input, 'info':Job.info, 'module':Job.module, 'reports':JOB_REPORTS, 'cmdargs':JOB_CMDARGS, 'hint':HINTTXT, 'Days':JobSchInfo['Days'], 'Disabled':JobSchInfo['Disabled'], 'Hour':JobSchInfo['Hour'], 'Minute':JobSchInfo['Minute'], 'DaysOfWeek':JobSchInfo['DaysOfWeek'], 'msf':MSF_DATA})
+            NEW_JOBS_ARRAY.append({'id':Job.id, 'name':Job.name, 'regexp':Job.regexp, 'exclude':Job.exclude, 'input':Job.input, 'info':Job.info, 'module':Job.module, 'reports':JOB_REPORTS, 'cmdargs':JOB_CMDARGS, 'hint':HINTTXT, 'Days':JobSchInfo['Days'], 'Disabled':JobSchInfo['Disabled'], 'Hour':JobSchInfo['Hour'], 'Minute':JobSchInfo['Minute'], 'Repeat':JobSchInfo['Repeat'], 'DaysOfWeek':JobSchInfo['DaysOfWeek'], 'msf':MSF_DATA})
+        #sys.stderr.write(str(NEW_JOBS_ARRAY))
         return NEW_JOBS_ARRAY
 
     def job_save_cmdargs():
@@ -850,7 +835,13 @@ def redteam(request):
                     os.symlink("/home/asf/hosts","/opt/asf/frontend/asfui/core/static/hosts")
 
                 if path.exists(MODULE_FOLDER+"start"):
+                    #Lock file has to be created by module, good to remove it on termination or kill
+#                     lockfile = open(JOB_FOLDER+".lock","w+")
+#                     lockfile.write(job_id)
+#                     lockfile.close()
                     subprocess.Popen(["nohup", MODULE_FOLDER+"start",str(job_id)], cwd=JOB_FOLDER)
+                    #Out of scope - do not try 
+                    #context['running_jobs'][job_id] = True
                     time.sleep(5)
                 else:
                     msg = "Error in module: "+Job.module+" not functional, missing start or stop\n"
@@ -1196,7 +1187,7 @@ def pages(request):
         html_template = loader.get_template( 'page-500.html' )
         return HttpResponse(html_template.render(context, request))
 
-# Classes and functions are meant to be exported, to avoid duplicates between modules, commands or else.
+# This classes and functions are meant to be exported, to avoid duplicates between modules, commands or else.
 PARSER_DEBUG=True
 def debug(text):
     if PARSER_DEBUG:
@@ -1247,8 +1238,7 @@ def ensure_dirs(DIR_PATHS):
         debug("Ensure existence of this directory: "+str(DIR)+"\n")
         if not os.path.isdir(DIR):
             os.makedirs(DIR)
-
- # Here we send deltas to Graylog, comparisson is separated           
+            
 def delta(info):
     JOURNAL_DIR = "/home/asf/alerts/journal/"
     QUEUE_DIR = "/home/asf/alerts/queue/"
@@ -1265,7 +1255,7 @@ def delta(info):
     info['hour'] = str(dt.hour)
     info['minute'] = str(dt.minute)
     info['second'] = str(dt.second)
-    #Creating a Hash fom info, this will be the file name in the Journal while it's written
+    #Creating a Hash fom info, this will be the file name in the Journal while it's weitten
     INFO_HASH = hashlib.sha256(str(info).encode('utf-8')).hexdigest()
     FILE_IN_JOURNAL = JOURNAL_DIR+INFO_HASH
     FIN = open(FILE_IN_JOURNAL, "w+")

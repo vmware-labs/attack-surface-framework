@@ -34,6 +34,7 @@ class sdService():
         Days = ""
         Hour = "00"
         Minute = "00"
+        Repeat = "00"
         FirstDay = True
         ADays = []
         for Day in DaysOfWeek:
@@ -48,7 +49,7 @@ class sdService():
             #String true
             self.config['Disabled'] = 'true'
         else:
-            #String false, not boolean
+            #string false, not boolean
             self.config['Disabled'] = 'false'
             
         if 'hour' in request.POST:
@@ -60,11 +61,20 @@ class sdService():
             Minute = request.POST['minute']
             if len(Minute) < 2:
                 Minute = '0'+Minute
+
+        if 'repeat' in request.POST:
+            Repeat = request.POST['repeat']
+            if len(Repeat) < 2:
+                Repeat = '0'+Repeat
+        OnCalendarRepeat=""
+        if Repeat != "00":
+            OnCalendarRepeat="/"+Repeat+":00"
         
         self.config['Hour'] = Hour
         self.config['Minute'] = Minute
+        self.config['Repeat'] = Repeat
         self.config['Days'] = ADays
-        self.config['Timer']['OnCalendar'] = Days+" "+Hour+":"+Minute
+        self.config['Timer']['OnCalendar'] = Days+" "+Hour+":"+Minute+OnCalendarRepeat
 
     def write(self):
         global MainDictionaries
@@ -72,7 +82,7 @@ class sdService():
             self.config['Timer']['Unit']=self.config['name']+".service"
         if "WantedBy" not in self.config['Install']:
             self.config['Install']['WantedBy'] = "multi-user.target"
-        #Writing the Service File, ignoring Timer
+        #Writing the Service File, we ignore Timer, because of the scope, and Install, because the Timer will be installable.
         ServiceFile=open("/etc/systemd/system/"+self.config['name']+".service",'w+')
         for Section in MainDictionaries:
             if Section != 'Timer' and Section != 'Install':
@@ -82,7 +92,7 @@ class sdService():
                 ServiceFile.write("\n")
         ServiceFile.close()
         
-        #Writing Timer Service Unit File, does not require Service Section
+        #Writing the Timer Service Unit File, does not require Service Section
         ServiceFile=open("/etc/systemd/system/"+self.config['name']+".timer",'w+')
         for Section in MainDictionaries:
             if Section != 'Service':
@@ -110,9 +120,13 @@ class sdService():
             json_info = ServiceFile.read()
             self.config = json.loads(json_info)
             ServiceFile.close()
+            #The following Fix is only for upgrade from older systemd timers.
+            if 'Repeat' not in self.config:
+                self.config['Repeat'] = '00'
             return True
         self.config['Hour'] = '00'
         self.config['Minute'] = '00'
+        self.config['Repeat'] = '00'
         self.config['Days'] = []
         self.config['Disabled'] = 'true'
         return False
@@ -147,9 +161,10 @@ class sdService():
         self.start()
         
     def setContext(self, context):
-        #Django Template compares integers, due to the counter, needs to be converted (hour, minute) to int
+        #Django Template compares integers, because of the for counter, it has to be converted (hour, minute) to int
         context['Hour'] = int(self.config['Hour'])
         context['Minute'] = int(self.config['Minute'])
+        context['Repeat'] = int(self.config['Repeat'])
         context['Days'] = self.config['Days']
         context['DaysOfWeek'] = DaysOfWeek
         context['Disabled'] = self.config['Disabled']

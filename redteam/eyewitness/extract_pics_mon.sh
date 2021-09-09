@@ -1,7 +1,7 @@
 #!/bin/bash
 if test "f$1" "=" "f"
 then 
-    echo "Error, please specify a JobFolder"
+    echo "Error, please specify a JobOutputFolder"
     exit 1
 fi
 if test "f$2" "=" "f"

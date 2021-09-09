@@ -10,15 +10,37 @@
 <form class="navbar-form" action="vd-in-targets" method="post" enctype="multipart/form-data" style="display: inline;">
  			{%csrf_token%}
               <span class="bmd-form-group"><div class="input-group no-border">
-                <input type="text" name='target_domain' value="" class="form-control" placeholder="New Target - IP or CIDR">
+              <table>
+              <tr>
+              <td>
+                <input type="text" name='target_domain' value="" class="form-control" placeholder="New Target exampledomain.com">
+               </td>
+               <td>
                 <input type="file" name="target_file">
                 <input type="hidden" name="target_action" value="new">
+               </td>
+               <td>
+                <select name="mode">
+                <option value="merge" selected>Merge Mode</option>
+                <option value="delete">Delete Mode</option>
+				<option value="deletebytag">Delete by Tag</option>                
+                <option value="sync">Sync Mode</option>
+                </select>
+               </td>
+               <td>
+                <input onClick="this.select();" type="text" name='tag' value="DEFAULT" class="form-control" placeholder="TAG" size="10">
+               </td>
+               <td>
                 <button type="submit" class="btn btn-white btn-round btn-just-icon">
                   <i class="material-icons">save</i>
                   <div class="ripple-container"></div>
                 </button>
+               </td>
+                </tr>
+                </table>                
               </div></span>
 </form>
+<b>Merge:</b>Add new objects only. <b>Delete:</b> Removes objects in the file list. <b>Sync:</b>Delete non present objects in the list, add new, only by matching TAG.
 <form class="navbar-form" action="vd-export" method="post" style="display: inline;">
 	{%csrf_token%}
           <span class="bmd-form-group"><div class="input-group no-border">
@@ -88,8 +110,8 @@
             <div class="col-md-12">
               <div class="card">
                 <div class="card-header card-header-primary">
-                  <h4 class="card-title ">Targets</h4>
-<!--                  <p class="card-category"> CIDR's, IP's, Domains</p> -->
+                  <h4 class="card-title ">Domain List</h4>
+                  <p class="card-category"> This Domain List are treated as Targets</p>
                 </div>
                 <div class="card-body">
                   <div class="table-responsive">
@@ -105,7 +127,10 @@
                           Type
                         </th>
                         <th>
-                          Last Report
+                          Tag
+                        </th>                        
+                        <th>
+                          Last Update
                         </th>
                         <th>
                           Count
@@ -126,6 +151,9 @@
                           <td>
                             {{ item.type }}
                           </td>
+                          <td>
+                            {{ item.tag }}
+                          </td>                          
                           <td>
                             {{ item.lastdate }}
                           </td>
