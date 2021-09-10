@@ -128,7 +128,7 @@ https://github.com/creativetimofficial/material-dashboard-django
 
 https://nmap.org/
 
-https://danielmiessler.com/study/amass/
+https://github.com/OWASP/Amass
 
 https://github.com/lanjelot/patator
 
