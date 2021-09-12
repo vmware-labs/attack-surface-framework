@@ -2,6 +2,7 @@
 # Needs to be run in kali linux - not tested on others
 # Install Graylog
 apt update && apt install -y imagemagick python3-venv psmisc psutils nmap curl wget tcpdump docker.io docker-compose python3-pip
+git clone https://github.com/projectdiscovery/nuclei-templates.git /home/nuclei-templates
 cp -R /opt/asf/tools/graylog /
 cd /graylog 
 docker-compose up -d
