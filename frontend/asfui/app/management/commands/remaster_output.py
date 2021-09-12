@@ -16,7 +16,9 @@ from app.views import autodetectType, delta
 
 #Static and Global Declarations
 HYDRA = re.compile("^(\[.*\])(\[.*\])\s+host:\s+([a-z,0-9,A-Z,\.]*)\s+login:\s+(\S*)\s+password:\s+(.*)$")
-NUCLEI_HTTP = re.compile("^.*(\[http.*\]).*$")
+#NUCLEI_HTTP = re.compile("^.*(\[http.*\]).*$")
+#Noticed Nuclei changed the output format, hence new regex
+NUCLEI_HTTP = re.compile("^.*(http.*)$")
 NUCLEI_HTTP_DASH = re.compile("^.*(\:\/\/).*$")
 DETECTOR_SOURCE = re.compile("^\[[A-Za-z0-9 ]+\].*")
 
