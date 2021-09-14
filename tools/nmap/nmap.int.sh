@@ -12,15 +12,6 @@ fi
 mkdir -p "$OUTPUT_FOLDER"
 > "$OUTPUT_FOLDER/nmap.lock"
 
-#This line is for override and debug
-#echo yahoo.com > "$INPUT_FOLDER/targets.txt"
-#echo scanme.nmap.org > "$INPUT_FOLDER/targets.txt"
-#echo 192.168.11.102 >> "$INPUT_FOLDER/targets.txt"
-#echo 192.168.11.77 >> "$INPUT_FOLDER/targets.txt"
-#echo 192.168.11.116 >> "$INPUT_FOLDER/targets.txt"
-#echo 192.168.1.254 >> "$INPUT_FOLDER/targets.txt"
-#echo 127.0.0.1 >> "$INPUT_FOLDER/targets.txt"
-
 SNGHOSTS="127.0.0.1"
 BLACKLST="10.206.96.68"
 LOGDIR="/netlog/var/log/madnmap.int/"
