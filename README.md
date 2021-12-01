@@ -31,7 +31,7 @@ As root
 
 Once the installation is completed
 
-5. `cd /opt/asf/frontend/asfgui/`
+5. `cd /opt/asf/frontend/asfui/`
 6. `. bin/activate`
 7. `python3 manage.py runserver 0.0.0.0:8080` - We recommend to run it on a screen session to leave server persistent (`screen -S asf`)
 
