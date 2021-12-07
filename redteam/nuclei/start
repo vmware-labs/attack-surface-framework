@@ -31,8 +31,7 @@ cp /opt/asf/tools/dicts/users.dict "$JOB_FOLDER/app.users"
 for mode in input asf dict users
 do cp -v "$JOB_FOLDER/app.$mode" "$JOB_OUTPUT_FOLDER/app.$mode"
 done
-#IMAGE_NAME='projectdiscovery/nuclei'
-IMAGE_NAME='m4ch1n3s/nuclei'
+IMAGE_NAME='projectdiscovery/nuclei'
 if ! docker images | grep $IMAGE_NAME
 then echo "Building nuclei..."
 docker build -t m4ch1n3s/nuclei /opt/asf/redteam/nuclei/nuclei-master/

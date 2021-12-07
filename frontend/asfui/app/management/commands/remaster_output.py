@@ -11,15 +11,17 @@ import os
 import re
 import argparse
 import csv
+import json
 from urllib.request import localhost
-from app.views import autodetectType, delta
+from app.views import autodetectType, delta, get_metadata
+from app.targets import get_metadata_array
 
 #Static and Global Declarations
 HYDRA = re.compile("^(\[.*\])(\[.*\])\s+host:\s+([a-z,0-9,A-Z,\.]*)\s+login:\s+(\S*)\s+password:\s+(.*)$")
 #NUCLEI_HTTP = re.compile("^.*(\[http.*\]).*$")
-#Noticed Nuclei changed the output format, hence new regex
 NUCLEI_HTTP = re.compile("^.*(http.*)$")
 NUCLEI_HTTP_DASH = re.compile("^.*(\:\/\/).*$")
+NUCLEI_NETWORK = re.compile(".*\[network\].*")
 DETECTOR_SOURCE = re.compile("^\[[A-Za-z0-9 ]+\].*")
 
 def parser_default(PARSER_INPUT, PARSER_OUTPUT):
@@ -33,13 +35,18 @@ def parser_patator_ssh(PARSER_INPUT, PARSER_OUTPUT):
             candidate = DATA[5].split(':')
             debug("Searching:"+candidate[0]+":\n")
             OldData = PARSER_OUTPUT.objects.filter(name=candidate[0])
+            MDT,METADATA = get_metadata(candidate[0])
             MSG = {'message':"[PATATOR][SSH BRUTEFORCE]", 'hostname':candidate[0], 'username':candidate[1], 'password':candidate[1]}
+            MSG.update(MDT)
             delta(MSG)
             debug("Dump:"+str(OldData)+":Dump\n")
             if OldData.count()>1:
                 debug("Warning: Found and Updating more than one:"+str(OldData[0].id)+":"+candidate[0]+":"+candidate[1]+":"+candidate[2]+"\n")
             debug("SSH BruteForce:{"+ candidate[1]+":"+candidate[2]+"}  \n")
-            OldData.update(service_ssh="SSH BruteForce:{"+ candidate[1]+":"+candidate[2]+"}  ")
+            OLDMETADATA=OldData[0].metadata
+            OLDMDT=get_metadata_array(OLDMETADATA)
+            NEWMETADATA=json.dumps(OLDMDT.update(MDT))
+            OldData.update(service_ssh="SSH BruteForce:{"+ candidate[1]+":"+candidate[2]+"}  ", owner=MDT['owner'], metadata=NEWMETADATA)
     return
 
 def parser_patator_rdp(PARSER_INPUT, PARSER_OUTPUT):
@@ -89,11 +96,16 @@ def parser_hydra_ftp(PARSER_INPUT, PARSER_OUTPUT):
             candidate = DATA[2]
             debug("Searching:"+candidate+"\n")
             OldData = PARSER_OUTPUT.objects.filter(name=candidate)
+            MDT,METADATA = get_metadata(candidate)
             MSG = {'message':"[HYDRA][FTP BRUTEFORCE]", 'hostname':candidate, 'username':DATA[3], 'password':DATA[4]}
+            MSG.update(MDT)
             delta(MSG)
             if OldData.count()>1:
                 debug("Found and Updating:"+str(OldData[0].id)+":"+DATA[2]+":"+DATA[3]+":"+DATA[4]+"\n")
-                OldData.update(service_ftp="FTP BruteForce:{"+DATA[2]+":"+DATA[3]+":"+DATA[4]+")")
+                OLDMETADATA=OldData[0].metadata
+                OLDMDT=get_metadata_array(OLDMETADATA)
+                NEWMETADATA=json.dumps(OLDMDT.update(MDT))
+                OldData.update(service_ftp="FTP BruteForce:{"+DATA[2]+":"+DATA[3]+":"+DATA[4]+")", owner=MDT['owner'], metadata=NEWMETADATA)
     return
 
 def parser_hydra_telnet(PARSER_INPUT, PARSER_OUTPUT):
@@ -105,16 +117,21 @@ def parser_hydra_telnet(PARSER_INPUT, PARSER_OUTPUT):
             candidate = DATA[2]
             debug("Searching:"+candidate+"\n")
             OldData = PARSER_OUTPUT.objects.filter(name=candidate)
+            MDT,METADATA = get_metadata(candidate)
             MSG = {'message':"[HYDRA][TELNET BRUTEFORCE]", 'hostname':candidate, 'username':DATA[3], 'password':DATA[4]}
+            MSG.update(MDT)
             delta(MSG)
             if OldData.count()>1:
                 debug("Found and Updating:"+str(OldData[0].id)+":"+DATA[2]+":"+DATA[3]+":"+DATA[4]+"\n")
-                OldData.update(service_telnet="Telnet BruteForce:{"+DATA[2]+":"+DATA[3]+":"+DATA[4]+")")
+                OLDMETADATA=OldData[0].metadata
+                OLDMDT=get_metadata_array(OLDMETADATA)
+                NEWMETADATA=json.dumps(OLDMDT.update(MDT))                
+                OldData.update(service_telnet="Telnet BruteForce:{"+DATA[2]+":"+DATA[3]+":"+DATA[4]+")", owner=MDT['owner'], metadata=NEWMETADATA)
     return
 
 def parser_nuclei_http(PARSER_INPUT, PARSER_OUTPUT):
     #Although you can import them from VIEWS, in this particular case, we need to match all over the string,
-    #and VIEWS uses it for autodetectType with EXACT MATCH, so removing ^ and $ does the trick
+    #and VIEWS uses it for autodetectType with EXACT MATCH, so removing ^ and $ do the trick
     DETECTOR_IPADDRESS = re.compile("(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})")
     DETECTOR_DOMAIN = re.compile("(?!\-)(?:[a-zA-Z\d\-]{0,62}[a-zA-Z\d]\.){1,126}(?!\d+)[a-zA-Z\d]{1,63}")
     clear_cache = []
@@ -142,15 +159,21 @@ def parser_nuclei_http(PARSER_INPUT, PARSER_OUTPUT):
                 
             OldData = PARSER_OUTPUT.objects.filter(name=DOMAIN)
             if OldData.count()==1:
+                MDT,METADATA = get_metadata(DOMAIN)
+                OLDMETADATA=OldData[0].metadata
+                OLDMDT=get_metadata_array(OLDMETADATA)
+                NEWMETADATA=json.dumps(OLDMDT.update(MDT))
                 debug("Found and Updating:"+str(OldData[0].id)+":"+DOMAIN+"\n")
                 if APPEND:
                     OldData.update(nuclei_http=OldData[0].nuclei_http+line)
                 else:
                     delta_cache[DOMAIN]=OldData[0].nuclei_http.split("\n")
-                    OldData.update(nuclei_http=line)
+                    OldData.update(nuclei_http=line, owner=MDT['owner'], metadata=NEWMETADATA)
 
                 if line not in delta_cache[DOMAIN]:
+                    
                     MSG = {'message':"[NUCLEI][New Finding]", 'host':DOMAIN, 'finding':line}
+                    MSG.update(MDT)
                     delta(MSG)
             else:
                 #This line is a temporary MOD, please comment for system integrity, all objects should exist
@@ -161,8 +184,106 @@ def parser_nuclei_http(PARSER_INPUT, PARSER_OUTPUT):
             debug("Found nothing:"+line)
     return
 
+def parser_nuclei_network(PARSER_INPUT, PARSER_OUTPUT):
+    #Although you can import them from VIEWS, in this particular case, we need to match all over the string,
+    #and VIEWS uses it for autodetectType with EXACT MATCH, so removing ^ and $ do the trick
+    DETECTOR_IPADDRESS = re.compile("(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})")
+    DETECTOR_DOMAIN = re.compile("(?!\-)(?:[a-zA-Z\d\-]{0,62}[a-zA-Z\d]\.){1,126}(?!\d+)[a-zA-Z\d]{1,63}")
+    clear_cache = []
+    delta_cache = {}
+    for line in PARSER_INPUT:
+        debug(line+"\n")
+        if NUCLEI_NETWORK.match(line):
+            DATA = line.split(" ")[-1]
+            DATA = DATA.split(":")[0]
+            debug(str(DATA)+"\n")
+            DOMAIN = DETECTOR_DOMAIN.findall(DATA)
+            if len(DOMAIN)==0:
+                debug(str(DETECTOR_IPADDRESS)+"\n")
+                DOMAIN = DETECTOR_IPADDRESS.findall(DATA)[0]
+            else:
+                DOMAIN=DOMAIN[0]
+            debug("Searching:"+str(DOMAIN)+"\n")
+            if DOMAIN in clear_cache:
+                debug("Cache:Already Cleared\n")
+                APPEND = True
+            else:
+                debug("Cache:Clearing Nuclei data\n")
+                clear_cache.append(DOMAIN)
+                APPEND = False
+                
+            OldData = PARSER_OUTPUT.objects.filter(name=DOMAIN)
+            if OldData.count()==1:
+                MDT,METADATA = get_metadata(DOMAIN)
+                OLDMETADATA=OldData[0].metadata
+                OLDMDT=get_metadata_array(OLDMETADATA)
+                NEWMETADATA=json.dumps(OLDMDT.update(MDT))
+                debug("Found and Updating:"+str(OldData[0].id)+":"+DOMAIN+"\n")
+                if APPEND:
+                    OldData.update(nuclei_http=OldData[0].nuclei_http+line)
+                else:
+                    delta_cache[DOMAIN]=OldData[0].nuclei_http.split("\n")
+                    OldData.update(nuclei_http=line, owner=MDT['owner'], metadata=NEWMETADATA)
+
+                if ((DOMAIN in delta_cache) and (line not in delta_cache[DOMAIN])) or (DOMAIN not in delta_cache):
+                    MSG = {'message':"[NUCLEI][New Finding]", 'host':DOMAIN, 'finding':line}
+                    MSG.update(MDT)
+                    delta(MSG)
+            else:
+                #This line is a temporary MOD, please comment for system integrity, all objects should exist
+                Result = PARSER_OUTPUT(name=DOMAIN, nname=DOMAIN, tags="[Services]", type=autodetectType(DOMAIN), nuclei_http=line)
+                Result.save()
+                debug("Error, not found:"+str(DATA)+"\n")
+        else:
+            debug("Found nothing:"+line)
+    return
+
+def parser_nse_vsanrce(PARSER_INPUT, PARSER_OUTPUT):
+    #Although you can import them from VIEWS, in this particular case, we need to match all over the string,
+    #and VIEWS uses it for autodetectType with EXACT MATCH, so removing ^ and $ do the trick
+    DETECTOR_IPADDRESS = re.compile("(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})")
+    DETECTOR_DOMAIN = re.compile("(?!\-)(?:[a-zA-Z\d\-]{0,62}[a-zA-Z\d]\.){1,126}(?!\d+)[a-zA-Z\d]{1,63}")
+    clear_cache = []
+    delta_cache = {}
+    for line in PARSER_INPUT:
+        line = line.rstrip()
+        debug(line+"\n")
+        DATA = line.split(",")
+        debug(str(DATA)+"\n")
+        #52.58.57.117, VMware vCenter Server 7.0.1 build:16507313,  Vulnerable to CVE-2021-21972, Vulnerable to vSAN RCE
+        if (len(DATA)>=3):
+            DOMAIN = DETECTOR_DOMAIN.findall(DATA[0])
+            if len(DOMAIN)==0:
+                DOMAIN = DETECTOR_IPADDRESS.findall(DATA[0])[0]
+            else:
+                DOMAIN = DOMAIN[0]
+            debug("Searching:"+str(DOMAIN)+"\n")
+            OldData = PARSER_OUTPUT.objects.filter(name=DOMAIN)
+            if OldData.count()==1:
+                MDT,METADATA = get_metadata(DOMAIN)
+                debug("Found and Updating:"+str(OldData[0].id)+":"+DOMAIN+"\n")
+                OLDMETADATA=OldData[0].metadata
+                OLDMDT=get_metadata_array(OLDMETADATA)
+                NEWMETADATA=json.dumps(OLDMDT.update(MDT))                
+                OldData.update(nse_vsanrce=line, owner=MDT['owner'], metadata=NEWMETADATA)
+                MSG = {'message':"[NSE][VSANRCE]", 'host':DOMAIN, 'finding':line}
+                counter = 0
+                for field in DATA:
+                    MSG["FIELD"+str(counter)]=field.lstrip().rstrip()
+                    counter+=1
+                MSG.update(MDT)
+                delta(MSG)
+            else:
+                #This line is a temporary MOD, please comment for system integrity, all objects should exist
+                Result = PARSER_OUTPUT(name=DOMAIN, nname=DOMAIN, tags="[Services]", type=autodetectType(DOMAIN), nse_vsanrce=line)
+                Result.save()
+                debug("Error, not found:"+str(DATA)+"\n")
+        else:
+            debug("Error, nonsense line:"+str(DATA)+"\n")
+    return
+
 #Here is the global declaration of parsers, functions can be duplicated
-action={'default':parser_default, 'patator.ssh':parser_patator_ssh, 'patator.rdp':parser_patator_rdp, 'patator.ftp':parser_patator_ftp, 'patator.telnet':parser_patator_telnet, 'hydra.ftp':parser_hydra_ftp, 'hydra.telnet':parser_hydra_telnet, 'nuclei.http':parser_nuclei_http}
+action={'default':parser_default, 'patator.ssh':parser_patator_ssh, 'patator.rdp':parser_patator_rdp, 'patator.ftp':parser_patator_ftp, 'patator.telnet':parser_patator_telnet, 'hydra.ftp':parser_hydra_ftp, 'hydra.telnet':parser_hydra_telnet, 'nuclei.http':parser_nuclei_http, 'nuclei.network':parser_nuclei_network, 'nse_vsanrce':parser_nse_vsanrce}
 
 def parseLines(PARSER_INPUT, JobInput, parser):
     PARSER_OUTPUT = vdServices
@@ -180,7 +301,7 @@ def debug(text):
 class Command(BaseCommand):
     help = 'Processes Worker Scans'
     def add_arguments(self, parser):
-        #This single module reads the input file and converts it 
+        #This single module reads the input file and convert it into 
         parser.add_argument('--input', help='The input file, if not provided stdin is used', default='stdin')
         parser.add_argument('--output', help='The output JobID:ID', default='error')
         parser.add_argument('--parser', help='The parser algorithm [default|patator{.ssh, .ftp, .rdp, .telnet, .smb}]', default='default')

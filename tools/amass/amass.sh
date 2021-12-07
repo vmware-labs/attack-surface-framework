@@ -1,7 +1,7 @@
 #!/bin/bash
 
 DSTAMP=$(date '+%Y%m%d%H%M')
-#IMAGE="caffix/amass"
+IMAGE="caffix/amass"
 IMAGE="m4ch1n3s/amass"
 OUTPUT_DIR_PATH="/home/amass"
 WDIR=`pwd`
@@ -19,8 +19,9 @@ fi
 	rm /home/amass/reports/amass-latest.txt
 	ln -s /home/amass/reports/amass.txt /home/amass/reports/amass-latest.txt
 #Lock
-echo docker run -v $OUTPUT_DIR_PATH:/.config/amass/ $IMAGE enum -brute -ip -src -df /.config/amass/targets.txt $1 $2 $3 $4 $5
-if  docker run -v $OUTPUT_DIR_PATH:/.config/amass/ $IMAGE enum -brute -ip -src -df /.config/amass/targets.txt $1 $2 $3 $4 $5 2>&1 | tee /home/amass/reports/amass.txt
+#echo "yahoo.com" > $OUTPUT_DIR_PATH/targets.txt
+echo docker run -v $OUTPUT_DIR_PATH:/.config/amass/ $IMAGE enum -brute -w /wordlists/all.txt -ip -src -df /.config/amass/targets.txt $1 $2 $3 $4 $5
+if  docker run -v $OUTPUT_DIR_PATH:/.config/amass/ $IMAGE enum -brute -w /wordlists/all.txt -ip -src -df /.config/amass/targets.txt $1 $2 $3 $4 $5 2>&1 | tee /home/amass/reports/amass.txt
 	then echo done
 	mv -v /home/amass/reports/amass.txt /home/amass/reports/amass-$1-$DSTAMP.txt
 	rm /home/amass/reports/amass-latest.txt

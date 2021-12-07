@@ -1,12 +1,12 @@
 #!/usr/bin/python3
 from django.core.management.base import BaseCommand, CommandError
-from app.models import vdResult
+from app.models import vdResult, vdServices
 from django.utils import timezone
 import re
 from cProfile import label
-from app.views import autodetectType, delta, debug
+from app.views import autodetectType, delta, debug, PARSER_DEBUG, get_metadata
 import traceback
-
+#vdServices.objects.all().delete()
 class Command(BaseCommand):
     help = 'Amass interpreter'
 
@@ -33,7 +33,8 @@ class Command(BaseCommand):
                 Tag = Finding[0] + "]"
                 line = Finding[1]
                 Finding = AMASS_SEPARATOR.split(line)
-                Result = vdResult(name=Finding[0], tags=Tag, info=Finding[1], type=autodetectType(Finding[0]))
+                MDT,MDATA=get_metadata(Finding[0])
+                Result = vdResult(name=Finding[0], tags=Tag, info=Finding[1], type=autodetectType(Finding[0]), owner=MDT['owner'], metadata=MDATA)
                 NewData = True
                 
                 try:
@@ -44,12 +45,15 @@ class Command(BaseCommand):
                     NewData = False
                     self.stdout.write("Finding Already exist:"+Finding[0])
                 if not NewData:
+                    #Think wise, do you really want to know domains who are not in the results now?
+                    #or do you think if a domain will appear again it will have different data?
                     self.stdout.write("Searching:"+Finding[0])
                     OldData = vdResult.objects.filter(name=Finding[0])
                     self.stdout.write("Found and Updating:"+str(OldData[0].id)+":"+Tag+":"+Finding[1])
                     OldData.update(info = Finding[1], tags = Tag)
                 else:
                     MSG=Result.getList()
+                    MSG.update(MDT)
                     MSG['message']="[AMASS][New Domain Found]"
                     MSG['full_message']=line
                     self.stdout.write("Finding and Called Delta:"+Finding[0]+str(MSG))

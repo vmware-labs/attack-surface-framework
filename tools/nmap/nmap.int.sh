@@ -13,7 +13,7 @@ mkdir -p "$OUTPUT_FOLDER"
 > "$OUTPUT_FOLDER/nmap.lock"
 
 SNGHOSTS="127.0.0.1"
-BLACKLST="10.206.96.68"
+BLACKLST="Put your IP's"
 LOGDIR="/netlog/var/log/madnmap.int/"
 WORKERS="64"
 TIMEOUT="360s"

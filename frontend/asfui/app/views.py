@@ -94,6 +94,10 @@ def search(RegExp, Model_NAME, ExcludeRegExp = ""):
         if ExcludeRegExp != "":
             partial = partial.exclude(nuclei_http__regex=ExcludeRegExp)
         results = add_hosts(partial, results)
+        partial = vdServices.objects.filter(owner=RegExp)
+        if ExcludeRegExp != "":
+            partial = partial.exclude(owner=ExcludeRegExp)
+        results = add_hosts(partial, results)
         return results
 
     def search_inservices(RegExp, ExcludeRegExp):
@@ -127,6 +131,10 @@ def search(RegExp, Model_NAME, ExcludeRegExp = ""):
         if ExcludeRegExp != "":
             partial = partial.exclude(nuclei_http__regex=ExcludeRegExp)
         results = add_hosts(partial, results)
+        partial = vdInServices.objects.filter(owner=RegExp)
+        if ExcludeRegExp != "":
+            partial = partial.exclude(owner=ExcludeRegExp)
+        results = add_hosts(partial, results)        
         return results
 
     def search_amass(RegExp, ExcludeRegExp):
@@ -136,26 +144,32 @@ def search(RegExp, Model_NAME, ExcludeRegExp = ""):
         if ExcludeRegExp != "":
             partial = partial.exclude(name__regex=RegExp)
         results = add_hosts(partial, results)
+        partial = vdResult.objects.filter(metadata__regex=RegExp)
+        if ExcludeRegExp != "":
+            partial = partial.exclude(metadata__regex=RegExp)
+        results = add_hosts(partial, results)        
         return results
     
     def search_targets(RegExp, ExcludeRegExp):
-        sys.stderr.write("[SEARCH]: Searching in any host from targets\n")
-        results = vdTarget.objects.none()
-        partial = vdTarget.objects.filter(name__regex=RegExp)
-        if ExcludeRegExp != "":
-            partial = partial.exclude(name__regex=RegExp)
-        results = add_hosts(partial, results)
-        return results
+        return search_targets_by_model(RegExp, ExcludeRegExp, vdTarget)
 
     def search_intargets(RegExp, ExcludeRegExp):
-        sys.stderr.write("[SEARCH]: Searching in any host from intargets\n")
-        results = vdInTarget.objects.none()
-        partial = vdInTarget.objects.filter(name__regex=RegExp)
+        return search_targets_by_model(RegExp, ExcludeRegExp, vdInTarget)
+
+#Master Search for Targets
+    def search_targets_by_model(RegExp, ExcludeRegExp, vdTargetModel):
+        sys.stderr.write("[SEARCH]: Searching in any host from "+vdTargetModel._meta.object_name+"\n")
+        results = vdTargetModel.objects.none()
+        partial = vdTargetModel.objects.filter(name__regex=RegExp)
         if ExcludeRegExp != "":
             partial = partial.exclude(name__regex=RegExp)
         results = add_hosts(partial, results)
+        partial = vdTargetModel.objects.filter(metadata__regex=RegExp)
+        if ExcludeRegExp != "":
+            partial = partial.exclude(metadata__regex=RegExp)
+        results = add_hosts(partial, results)
         return results
-            
+                
     action={'services':search_services, 'amass':search_amass, 'service':search_services, 'inservices':search_inservices, 'targets':search_targets, 'intargets':search_intargets}
     if Model_NAME in action:
         return action[Model_NAME](RegExp, ExcludeRegExp)
@@ -444,7 +458,7 @@ def portscan(request):
                         PICTURE = "/static/hosts/"+Host.name+"/"+str(file)
                         break
             NEW_INFO = Host.info + "\n========== BruteForce ==========\n" + Host.service_ssh + Host.service_ftp +" "+ Host.service_rdp +" "+ Host.service_telnet + " " +  Host.service_smb + "\n\n========== Nuclei ==========\n" + Host.nuclei_http
-            H = {'id':Host.id, 'screenshot':PICTURE, 'name':Host.name, 'nname':Host.nname, 'ipv4':Host.ipv4, 'lastdate':Host.lastdate, 'ports':Host.ports, 'info':NEW_INFO}
+            H = {'id':Host.id, 'screenshot':PICTURE, 'name':Host.name, 'nname':Host.nname, 'ipv4':Host.ipv4, 'lastdate':Host.lastdate, 'ports':Host.ports, 'info':NEW_INFO, 'owner':Host.owner, 'metadata':Host.metadata}
             NEW_HWS.append(H)
         return NEW_HWS
         
@@ -571,7 +585,7 @@ def inportscan(request):
                         PICTURE = "/static/hosts/"+Host.name+"/"+str(file)
                         break
             NEW_INFO = Host.info + "\n========== BruteForce ==========\n" + Host.service_ssh + Host.service_ftp +" "+ Host.service_rdp +" "+ Host.service_telnet + " " +  Host.service_smb + "\n\n========== Nuclei ==========\n" + Host.nuclei_http
-            H = {'id':Host.id, 'screenshot':PICTURE, 'name':Host.name, 'nname':Host.nname, 'ipv4':Host.ipv4, 'lastdate':Host.lastdate, 'ports':Host.ports, 'info':NEW_INFO}
+            H = {'id':Host.id, 'screenshot':PICTURE, 'name':Host.name, 'nname':Host.nname, 'ipv4':Host.ipv4, 'lastdate':Host.lastdate, 'ports':Host.ports, 'info':NEW_INFO, 'owner':Host.owner, 'metadata':Host.metadata}
             NEW_HWS.append(H)
         return NEW_HWS
         
@@ -977,9 +991,9 @@ def export(request):
                 sys.stderr.write("Error looking for the regular expression\n")
                 
         query = search(regexp, 'services', exclude)
-        writer.writerow(['name', 'cname', 'ipv4', 'lastdate', 'ports', 'full_ports', 'service_ssh', 'service_rdp', 'service_telnet', 'service_ftp', 'service_smb', 'nuclei_http'])
+        writer.writerow(['name', 'cname', 'ipv4', 'lastdate', 'ports', 'full_ports', 'service_ssh', 'service_rdp', 'service_telnet', 'service_ftp', 'service_smb', 'nuclei_http', 'owner', 'metadata'])
         for host in query:
-            writer.writerow([host.name, host.nname, host.ipv4, host.lastdate, host.ports, host.full_ports, host.service_ssh, host.service_rdp, host.service_telnet, host.service_ftp, host.service_smb, host.nuclei_http])
+            writer.writerow([host.name, host.nname, host.ipv4, host.lastdate, host.ports, host.full_ports, host.service_ssh, host.service_rdp, host.service_telnet, host.service_ftp, host.service_smb, host.nuclei_http, host.owner, host.metadata])
         return
 
     def export_inservices(writer):
@@ -995,23 +1009,23 @@ def export(request):
                 sys.stderr.write("Error looking for the regular expression\n")
                 
         query = search(regexp, 'inservices', exclude)
-        writer.writerow(['name', 'cname', 'ipv4', 'lastdate', 'ports', 'full_ports', 'service_ssh', 'service_rdp', 'service_telnet', 'service_ftp', 'service_smb', 'nuclei_http'])
+        writer.writerow(['name', 'cname', 'ipv4', 'lastdate', 'ports', 'full_ports', 'service_ssh', 'service_rdp', 'service_telnet', 'service_ftp', 'service_smb', 'nuclei_http', 'owner', 'metadata'])
         for host in query:
-            writer.writerow([host.name, host.nname, host.ipv4, host.lastdate, host.ports, host.full_ports, host.service_ssh, host.service_rdp, host.service_telnet, host.service_ftp, host.service_smb, host.nuclei_http])
+            writer.writerow([host.name, host.nname, host.ipv4, host.lastdate, host.ports, host.full_ports, host.service_ssh, host.service_rdp, host.service_telnet, host.service_ftp, host.service_smb, host.nuclei_http, host.owner, host.metadata])
         return
     
     def export_targets(writer):
         query = vdTarget.objects.all()
-        writer.writerow(['name', 'type', 'lastdate', 'itemcount'])
+        writer.writerow(['name', 'type', 'lastdate', 'itemcount', 'tag', 'owner', 'metadata'])
         for host in query:
-            writer.writerow([host.name, host.type, host.lastdate, host.itemcount])
+            writer.writerow([host.name, host.type, host.lastdate, host.itemcount, host.tag, host.owner, host.metadata])
         return
 
     def export_intargets(writer):
         query = vdInTarget.objects.all()
-        writer.writerow(['name', 'type', 'lastdate', 'itemcount'])
+        writer.writerow(['name', 'type', 'lastdate', 'itemcount', 'tag', 'owner', 'metadata'])
         for host in query:
-            writer.writerow([host.name, host.type, host.lastdate, host.itemcount])
+            writer.writerow([host.name, host.type, host.lastdate, host.itemcount, host.tag, host.owner, host.metadata])
         return
     
     def export_cypher_ex(writer):
@@ -1235,7 +1249,7 @@ def ensure_dirs(DIR_PATHS):
         PATHS = DIR_PATHS
         
     for DIR in PATHS:
-        debug("Ensure existence of this directory: "+str(DIR)+"\n")
+        #debug("Ensure existence of this directory: "+str(DIR)+"\n")
         if not os.path.isdir(DIR):
             os.makedirs(DIR)
             
@@ -1268,3 +1282,18 @@ def delta(info):
     shutil.move(FILE_IN_JOURNAL, QUEUE_DIR+INFO_HASH)
     debug("Created new alert in queue:"+INFO_HASH+":"+str(info)+":"+json_info+"\n")
     return True
+
+def get_metadata(id,scope='internal'):
+    TargetModel = vdInTarget
+    if scope=='external':
+        TargetModel = vdTarget
+    Query = TargetModel.objects.filter(name=id)
+    if Query.exists():
+        debug("Found:"+str(Query[0].metadata)+"\n\n")
+        return get_metadata_array(Query[0].metadata),Query[0].metadata
+    else:
+        if scope=='internal':
+            return get_metadata(id, 'external')
+        METADATA = {}
+        METADATA['owner'] = 'Unknown'
+        return METADATA, json.dumps(METADATA)

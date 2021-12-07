@@ -1,4 +1,4 @@
 This is an example Hint File
-This will be loaded into the UI to explain the user how to work with Arguments 0 1 2 3 4 and so on
-These arguments, are fake, this module does nothing with extra arguments.
+This will be loaded into the UI to explain the user how to work with the Argument 0 1 2 3 4 and so on
+This arguments, are fake, this module does nothing with extra arguments.
 docker run --rm -v $JOB_OUTPUT_FOLDER/:/tmp/EyeWitness/ m4ch1n3s/eyewitness $ARG0 $ARG1 --web --timeout 120 -f /tmp/EyeWitness/app.input --results 300 --no-prompt 2>&1 > "$JOB_OUTPUT_FOLDER/app.log" &

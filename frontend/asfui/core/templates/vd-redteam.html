@@ -49,12 +49,12 @@ function search_msf_module(SuchForm){
  <form class="navbar-form" action="vd-redteam" method="post">
  			{%csrf_token%}
              <span class="bmd-form-group"><div class="input-group no-border">
-             <input type="text" name='job_name' value="" class="form-control" placeholder="New Job Name">             
+             <input type="text" name='job_name' value="" class="form-control" placeholder="New job name">             
              In:
              <select name='job_input' class="form-control">
              <option value="amass">Amass Output</option>
-             <option value="services">External PortScan</option>
-             <option value="inservices">Internal PortScan</option>
+             <option value="services">External Enumeration</option>
+             <option value="inservices">Internal Enumeration</option>
              </select>
              Filter:
              <select name='job_regexp' class="form-control">
@@ -79,8 +79,7 @@ function search_msf_module(SuchForm){
             <div class="col-md-12">
               <div class="card">
                 <div class="card-header card-header-primary">
-                  <h4 class="card-title ">Job LIst</h4>
-                  <p class="card-category"> Jobs Created with RegExp Deleted Info, will persist.</p>
+                  <h4 class="card-title ">Jobs list</h4>
                 </div>
                 <div class="card-body">
                   <div class="table-responsive">

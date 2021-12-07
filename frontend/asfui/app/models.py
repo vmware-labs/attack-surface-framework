@@ -19,6 +19,8 @@ class vdTarget(models.Model):
     itemcount = models.IntegerField(default=0)
     type = models.CharField(max_length=100, default='DOMAIN')
     tag = models.CharField(max_length=100, default='DEFAULT')
+    owner = models.CharField(max_length=512, default='')
+    metadata = models.TextField(default="")
     
     def __str__(self):
         return self.name.lower()
@@ -30,6 +32,8 @@ class vdInTarget(models.Model):
     itemcount = models.IntegerField(default=0)
     type = models.CharField(max_length=100, default='DOMAIN')
     tag = models.CharField(max_length=100, default='DEFAULT')
+    owner = models.CharField(max_length=512, default='')
+    metadata = models.TextField(default="")
     
     def __str__(self):
         return self.name.lower()
@@ -44,6 +48,8 @@ class vdResult(models.Model):
     itemcount = models.IntegerField(default=0)
     tags = models.CharField(max_length=250, default="")
     info = models.CharField(max_length=250, default="")
+    owner = models.CharField(max_length=512, default='')
+    metadata = models.TextField(default="")
     
     def __str__(self):
         return self.name.lower()
@@ -72,6 +78,8 @@ class vdServices(models.Model):
     info = models.TextField(default="")
     info_gnmap = models.TextField(default="")
     nse_vsanrce = models.CharField(max_length=250, default="")
+    owner = models.CharField(max_length=512, default='')
+    metadata = models.TextField(default="")
     
     def __str__(self):
         return self.name.lower()
@@ -97,6 +105,9 @@ class vdInServices(models.Model):
     info = models.TextField(default="")
     info_gnmap = models.TextField(default="")
     nse_vsanrce = models.CharField(max_length=250, default="")
+    owner = models.CharField(max_length=512, default='')
+    metadata = models.TextField(default="")
+
     
     def __str__(self):
         return self.name.lower()

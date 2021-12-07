@@ -10,8 +10,7 @@
             <div class="col-md-12">
               <div class="card">
                 <div class="card-header card-header-primary">
-                  <h4 class="card-title ">Amass</h4>
-                  <p class="card-category"> External Discovery</p>
+                  <h4 class="card-title ">Discovery Service</h4>
                 </div>
                 <div class="card-body">
                   <div class="table-responsive">
@@ -19,9 +18,9 @@
 <tr>
 <td>
 {% if running %}
-Amass running
+Amass service running
 {% else %}
-Amass waiting
+Amass service waiting
 {% endif %}
 </td>
 <td>
@@ -41,7 +40,7 @@ Amass waiting
                 </button>
   {% else %}
  <input type="hidden" name="amass_action" value="start">
-                <button type="submit" class="btn btn-white btn-round btn-just-icon" rel="tooltip" title="" data-original-title="Start Amass Service">
+                <button type="submit" class="btn btn-white btn-round btn-just-icon" rel="tooltip" title="" data-original-title="Start Amass">
                   <i class="material-icons">play_arrow</i>
                   <div class="ripple-container"></div>
                 </button> 
@@ -53,7 +52,7 @@ Amass waiting
  			{%csrf_token%}
              <span class="bmd-form-group"><div class="input-group no-border">
 			 <input type="hidden" name="model" value="amass">
-             <button type="submit" class="btn btn-white btn-round btn-just-icon" rel="tooltip" title="" data-original-title="Export All Hosts in TSV">
+             <button type="submit" class="btn btn-white btn-round btn-just-icon" rel="tooltip" title="" data-original-title="Export All assets in TSV">
              <i class="material-icons">system_update_alt</i>
              <div class="ripple-container"></div>
              </button>
@@ -76,11 +75,22 @@ Amass waiting
 			<i class="material-icons">alarm_add</i>
 			</button>
 			</span>
+</td><td>
+ <form class="navbar-form" action="vd-amass" method="post" style="display: inline;">
+ 			{%csrf_token%}
+             <span class="bmd-form-group"><div class="input-group no-border">
+			 <input type="hidden" name="amass_action" value="total_purge">
+             <button type="submit" class="btn btn-white btn-round btn-just-icon" rel="tooltip" title="" data-original-title="Total Purge (DANGER)">
+             <i class="material-icons">thumb_down</i>
+             <div class="ripple-container"></div>
+             </button>
+             </div></span>
+</form>
 </td>
 </tr>
                     </table>
 <div id="systemd.timer" style="display: none;" align="left">
-<h3>Schedule Scan Process</h3>
+<h3>Scheduler</h3>
     <form class="navbar-form" action="vd-amass" method="post" style="display: inline;">
  			{%csrf_token%}
              <span class="bmd-form-group"><div class="input-group no-border">
@@ -116,7 +126,7 @@ Amass waiting
 			 </select>
 			 </td>
 			 <td>
-             <button type="submit" class="btn btn-white btn-round btn-just-icon" rel="tooltip" title="" data-original-title="Save Scheduling">
+             <button type="submit" class="btn btn-white btn-round btn-just-icon" rel="tooltip" title="" data-original-title="Save schedule">
              <i class="material-icons">save</i>
              <div class="ripple-container"></div>
              </button>
@@ -140,9 +150,9 @@ Amass waiting
 <form class="navbar-form" action="vd-amass" method="post">
  			{%csrf_token%}
              <span class="bmd-form-group"><div class="input-group no-border">
-             <input type="text" name='domain_search' value="{{ domain_search }}" class="form-control" placeholder="New Regex query">
+             <input type="text" name='domain_search' value="{{ domain_search }}" class="form-control" placeholder="New regex query">
 			 <input type="hidden" name="amass_action" value="filter">
-             <button type="submit" class="btn btn-white btn-round btn-just-icon" rel="tooltip" title="" data-original-title="Search by Regular Expression">
+             <button type="submit" class="btn btn-white btn-round btn-just-icon" rel="tooltip" title="" data-original-title="Search by regex">
              <i class="material-icons">search</i>
              <div class="ripple-container"></div>
              </button>
@@ -189,8 +199,7 @@ Amass waiting
             <div class="col-md-12">
               <div class="card">
                 <div class="card-header card-header-primary">
-                  <h4 class="card-title ">Discovered Assets</h4>
-<!--                  <p class="card-category"> Main input for enumeration</p> -->
+                  <h4 class="card-title ">Assets</h4>
                 </div>
                 <div class="card-body">
                   <div class="table-responsive">
@@ -213,6 +222,9 @@ Amass waiting
                         </th>
                         <th>
                           Count
+                        </th>
+                        <th>
+                          Owner
                         </th>
                         <th style="text-align: center;">
                           Tools
@@ -239,6 +251,11 @@ Amass waiting
                           <td class="text-primary">
                             {{ item.itemcount }}
                           </td>
+                          <td class="text-primary">
+                          <span onclick="row = document.getElementById('metadata-{{ item.id }}'); if (row.style.display=='none') {row.style.display='';}else{row.style.display='none';}" style="display: inline;">
+                            {{ item.owner }}
+                          </span>
+                          </td>
                           <td style="text-align: center;">
  <form class="navbar-form" action="vd-amass" method="post" style="display: inline;">
  			{%csrf_token%}
@@ -252,6 +269,11 @@ Amass waiting
              </div></span>
 </form>
                           </td>
+                        </tr>
+                        <tr>
+                        <td colspan=10 id="metadata-{{ item.id }}" style="display: none;">
+                        {{ item.metadata }}
+                        </td>
                         </tr>
 
 {% endfor %}

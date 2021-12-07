@@ -11,7 +11,6 @@
               <div class="card">
                 <div class="card-header card-header-primary">
                   <h4 class="card-title ">Enumeration</h4>
-<!--                  <p class="card-category"> Control Nmap Scaneer Process  {{ error }}</p> -->
                 </div>
                 <div class="card-body">
                   <div class="table-responsive">
@@ -19,9 +18,9 @@
 <tr>
 <td>
 {% if running %}
-Nmap Process running
+Nmap running
 {% else %}
-Nmap Scheduler waiting
+Nmap waiting
 {% endif %}
 </td>
 <td>
@@ -37,13 +36,13 @@ Nmap Scheduler waiting
  -->                
  {% if running %}
  <input type="hidden" name="nmap_action" value="stop">
-                <button type="submit" class="btn btn-white btn-round btn-just-icon"  rel="tooltip" title="" data-original-title="Stop Service Discovery">
+                <button type="submit" class="btn btn-white btn-round btn-just-icon"  rel="tooltip" title="" data-original-title="Stop">
                   <i class="material-icons">stop</i>
                   <div class="ripple-container"></div>
                 </button>
   {% else %}
  <input type="hidden" name="nmap_action" value="start">
-                <button type="submit" class="btn btn-white btn-round btn-just-icon" rel="tooltip" title="" data-original-title="Start Service Discovery">
+                <button type="submit" class="btn btn-white btn-round btn-just-icon" rel="tooltip" title="" data-original-title="Start">
                   <i class="material-icons">play_arrow</i>
                   <div class="ripple-container"></div>
                 </button> 
@@ -64,7 +63,7 @@ Nmap Scheduler waiting
 </form>
 </td><td>
 			<span onclick="row = document.getElementById('systemd.timer'); if (row.style.display=='none') {row.style.display='';}else{row.style.display='none';}" style="display: inline;">
-			<button type="submit" class="btn btn-white btn-round btn-just-icon" rel="tooltip" title="" data-original-title="Schedule Service">
+			<button type="submit" class="btn btn-white btn-round btn-just-icon" rel="tooltip" title="" data-original-title="Scheduler Service">
 			<i class="material-icons">alarm_add</i>
 			</button>
 			</span>
@@ -83,7 +82,7 @@ Nmap Scheduler waiting
 </tr>
                     </table>
 <div id="systemd.timer" style="display: none;" align="left">
-<h3>Scheduler</h3>
+<h3>Schedule</h3>
     <form class="navbar-form" action="vd-in-portscan" method="post" style="display: inline;">
  			{%csrf_token%}
              <span class="bmd-form-group"><div class="input-group no-border">
@@ -119,7 +118,7 @@ Nmap Scheduler waiting
 			 </select>
 			 </td>
 			 <td>
-             <button type="submit" class="btn btn-white btn-round btn-just-icon" rel="tooltip" title="" data-original-title="Save Scheduling">
+             <button type="submit" class="btn btn-white btn-round btn-just-icon" rel="tooltip" title="" data-original-title="Save schedule">
              <i class="material-icons">save</i>
              <div class="ripple-container"></div>
              </button>
@@ -145,8 +144,8 @@ Nmap Scheduler waiting
  <form class="navbar-form" action="vd-in-portscan" method="post" style="display: inline;">
  			{%csrf_token%}
              <span class="bmd-form-group"><div class="input-group no-border">
-             Include: &nbsp;  &nbsp;  &nbsp;<input type="text" name='results_search' value="{{ results_search }}" class="form-control" placeholder="New Regex query">
-             Exclude:  &nbsp;  &nbsp;  &nbsp;<input type="text" name='results_exclude' value="{{ results_exclude }}" class="form-control" placeholder="Exclude Regex query">
+             Include: &nbsp;  &nbsp;  &nbsp;<input type="text" name='results_search' value="{{ results_search }}" class="form-control" placeholder="New regex query">
+             Exclude:  &nbsp;  &nbsp;  &nbsp;<input type="text" name='results_exclude' value="{{ results_exclude }}" class="form-control" placeholder="Exclude regex query">
 			 <input type="hidden" name="nmap_action" value="filter">
              <button type="submit" class="btn btn-white btn-round btn-just-icon" rel="tooltip" title="" data-original-title="Search">
              <i class="material-icons">search</i>
@@ -164,7 +163,7 @@ Save Your Search:
              <input type="text" name='regexp_name' value="" class="form-control" placeholder="Title for your RegExp">
              <input type="text" name='regexp_info' value="" class="form-control" placeholder="Description">
 			 <input type="hidden" name="nmap_action" value="save_regexp">
-             <button type="submit" class="btn btn-white btn-round btn-just-icon" rel="tooltip" title="" data-original-title="Save Search">
+             <button type="submit" class="btn btn-white btn-round btn-just-icon" rel="tooltip" title="" data-original-title="Save search">
              <i class="material-icons">save</i>
              <div class="ripple-container"></div>
              </button>
@@ -179,7 +178,7 @@ Save Your Search:
               <div class="card">
                 <div class="card-header card-header-primary">
                   <h4 class="card-title ">Filters</h4>
-<!--                  <p class="card-category"> Regular Expressions to apply Red Team Modules</p> -->
+                  <p class="card-category"> Regex queries for Redteam modules</p>
                 </div>
                 <div class="card-body">
                   <div class="table-responsive">
@@ -238,7 +237,7 @@ Save Your Search:
  			{%csrf_token%}
 			 <input type="hidden" name="model" value="services">
 			 <input type="hidden" name='regexp_id' value="{{ item.id }}">
-             <button type="submit" class="btn btn-white btn-round btn-just-icon"  rel="tooltip" title="" data-original-title="Export This Search">
+             <button type="submit" class="btn btn-white btn-round btn-just-icon"  rel="tooltip" title="" data-original-title="Export search">
              <i class="material-icons">system_update_alt</i>
              <div class="ripple-container"></div>
              </button>
@@ -248,7 +247,7 @@ Save Your Search:
  			{%csrf_token%}
 			 <input type="hidden" name="model" value="inservices_cypher">
 			 <input type="hidden" name='regexp_id' value="{{ item.id }}">
-             <button type="submit" class="btn btn-white btn-round btn-just-icon"  rel="tooltip" title="" data-original-title="Export This Search in Cypher">
+             <button type="submit" class="btn btn-white btn-round btn-just-icon"  rel="tooltip" title="" data-original-title="Export in Cypher">
              <i class="material-icons">device_hub</i>
              <div class="ripple-container"></div>
              </button>
@@ -278,7 +277,7 @@ Save Your Search:
              <input type="hidden" name='results_search' value="{{ results_search }}">
 			 <input type="hidden" name="nmap_action" value="filter">
 			 <input type="hidden" name="page" value="{{ query_page_prev }}">
-             <button type="submit" class="btn btn-white btn-round btn-just-icon"  rel="tooltip" title="" data-original-title="Previous Page">
+             <button type="submit" class="btn btn-white btn-round btn-just-icon"  rel="tooltip" title="" data-original-title="Previous page">
              <i class="material-icons">skip_previous</i>
              <div class="ripple-container"></div>
              </button>
@@ -295,7 +294,7 @@ Save Your Search:
              <input type="hidden" name='results_search' value="{{ results_search }}">
 			 <input type="hidden" name="nmap_action" value="filter">
 			 <input type="hidden" name="page" value="{{ query_page_next }}">
-             <button type="submit" class="btn btn-white btn-round btn-just-icon" rel="tooltip" title="" data-original-title="Next Page">
+             <button type="submit" class="btn btn-white btn-round btn-just-icon" rel="tooltip" title="" data-original-title="Next page">
              <i class="material-icons">skip_next</i>
              <div class="ripple-container"></div>
              </button>
@@ -308,8 +307,7 @@ Save Your Search:
             <div class="col-md-12">
               <div class="card">
                 <div class="card-header card-header-primary">
-                  <h4 class="card-title ">Enumerated Assets</h4>
-<!--                  <p class="card-category"> Service Discovery for Alive Hosts</p>-->
+                  <h4 class="card-title ">Ports and services</h4>
                 </div>
                 <div class="card-body">
                   <div class="table-responsive">
@@ -330,6 +328,9 @@ Save Your Search:
                         <th style="text-align: center;">
                           Services
                         </th>
+                        <th style="text-align: center;">
+                          Owner
+                        </th>                        
                         <th style="text-align: center;">
                           Tools
                         </th>
@@ -356,6 +357,11 @@ Save Your Search:
                           <td class="text-primary">
                             {{ item.ports }}
                           </td>
+                          <td class="text-primary">
+                          <span onclick="row = document.getElementById('metadata-{{ item.id }}'); if (row.style.display=='none') {row.style.display='';}else{row.style.display='none';}" style="display: inline;">
+                            {{ item.owner }}
+                          </span>
+                          </td>                          
                           <td style="text-align: center;">
 							<span onclick="row = document.getElementById('host_{{ item.id }}'); if (row.style.display=='none') {row.style.display='';}else{row.style.display='none';}" style="display: inline;">
 							<button type="submit" class="btn btn-white btn-round btn-just-icon" rel="tooltip" title="" data-original-title="Show Reports">
@@ -367,7 +373,7 @@ Save Your Search:
 							             <span class="bmd-form-group"><div class="input-group no-border">
 										 <input type="hidden" name="nmap_action" value="delete">
 										 <input type="hidden" name="id" value="{{ item.id }}">
-							             <button type="submit" class="btn btn-white btn-round btn-just-icon" rel="tooltip" title="" data-original-title="Delete Results and Host">
+							             <button type="submit" class="btn btn-white btn-round btn-just-icon" rel="tooltip" title="" data-original-title="Delete Results and Hosts">
 							             <i class="material-icons">delete</i>
 							             <div class="ripple-container"></div>
 							             </button>
@@ -389,6 +395,11 @@ Save Your Search:
 <img src="{{ item.screenshot }}" width="100%">
 </td>
 </tr>
+ <tr>
+ <td colspan=10 id="metadata-{{ item.id }}" style="display: none;">
+ {{ item.metadata }}
+ </td>
+ </tr>
 
 {% endfor %}
                       </tbody>

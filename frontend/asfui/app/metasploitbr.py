@@ -95,6 +95,8 @@ def msf_check_services():
     PMSFD = False
     PMSFRPCD = False
     for process in psutil.process_iter():
+        #For now, we are going to assume a unique process with that name is running, in the future it should be checked the port number too, but it could be in a container, so is the same problem.
+        #sys.stderr.write("Process name:"+str(process)+str(process.cmdline())+"\n")
         if process.name == "msfd" or process.name == "msfrpcd":
             PMSFD = True
     if not PMSFRPCD:

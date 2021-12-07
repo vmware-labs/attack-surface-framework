@@ -21,7 +21,10 @@ def target_new_model(vdTargetModel,vdServicesModel,request,context,autodetectTyp
             Tag = request.POST['tag'].strip()                
         if not domain == "":
             Type = autodetectType(domain)
-            vdTargetModel.objects.update_or_create(name=domain, defaults={'type': Type, 'tag':Tag, 'lastdate': LastDate})
+            metadata = {}
+            metadata['owner']="Admin from UI"
+            Jmetadata = json.dumps(metadata)
+            vdTargetModel.objects.update_or_create(name=domain, defaults={'type': Type, 'tag':Tag, 'lastdate': LastDate, 'owner': metadata['owner'], 'metadata': Jmetadata})
         if 'target_file' in request.FILES:
             target_file = request.FILES['target_file']
             fs = FileSystemStorage()
@@ -32,8 +35,12 @@ def target_new_model(vdTargetModel,vdServicesModel,request,context,autodetectTyp
             for domain in addDomFiles:
                 domain = domain.strip()
                 Type = autodetectType(domain)
+                metadata = {}
+                metadata['owner']="Admin from UI"
+                metadata['bulk']=target_file.name
+                Jmetadata = json.dumps(metadata)
                 try:
-                    vdTargetModel.objects.update_or_create(name=domain, defaults={'type': Type, 'tag':Tag, 'lastdate': LastDate})
+                    vdTargetModel.objects.update_or_create(name=domain, defaults={'type': Type, 'tag':Tag, 'lastdate': LastDate, 'owner':metadata['owner'], 'metadata': Jmetadata})
                 except:
                     sys.stderr.write("Duplicated Target, Skipping:"+domain)
                     
@@ -66,8 +73,9 @@ def internal_delete(vdTargetModel,vdServicesModel,DeleteTarget,autodetectType,de
         DeleteFinding = vdServicesModel.objects.filter(name=Name)
         for finding in DeleteFinding:
             sys.stderr.write("\t\tLinked for deletion Obj:"+str(finding)+"\n")
-            MSG = {}
-            MSG['message'] = "[DELETE][OBJECT FROM SERVICES DATABASE]"
+            MSG = get_metadata_array(finding.metadata)
+            MSG['owner'] = finding.owner
+            MSG['message'] = "[DELETE][OBJECT FROM "+vdTargetModel._meta.object_name+" SERVICES DATABASE]"
             MSG['type'] = autodetectType(finding.name)
             MSG['name'] = finding.name
             MSG['lastupdate'] = str(finding.lastdate)
@@ -77,18 +85,31 @@ def internal_delete(vdTargetModel,vdServicesModel,DeleteTarget,autodetectType,de
         DeleteFinding = vdServicesModel.objects.filter(nname=Name)
         for finding in DeleteFinding:
             sys.stderr.write("\t\tLinked for deletion Obj:"+str(finding)+"\n")
-            MSG = {}
-            MSG['message'] = "[DELETE][OBJECT FROM SERVICES DATABASE]"
+            MSG = get_metadata_array(finding.metadata)
+            MSG['owner'] = finding.owner
+            MSG['message'] = "[DELETE][OBJECT FROM "+vdServicesModel._meta.object_name+" SERVICES DATABASE]"
             MSG['type'] = autodetectType(finding.name)
             MSG['name'] = finding.name
             MSG['lastupdate'] = str(finding.lastdate)
             delta(MSG)
         #Bulk deletion, no loop required
         DeleteFinding.delete()
-        MSG = {}
-        MSG['message'] = "[DELETE][OBJECT FROM TARGET DATABASE]"
+        MSG = get_metadata_array(obj.metadata)
+        #MSG['metadata'] = obj.metadata
+        MSG['owner'] = obj.owner
+        MSG['message'] = "[DELETE][OBJECT FROM "+vdTargetModel._meta.object_name+" TARGET DATABASE]"
         MSG['type'] = autodetectType(obj.name)
         MSG['name'] = obj.name
         MSG['lastupdate'] = str(obj.lastdate)
         delta(MSG)
         DeleteTarget.delete()
+
+def get_metadata_array(metadata):
+    if len(metadata)>1:
+        mdt = json.loads(metadata)
+        if mdt is None:
+            return {}
+        else:
+            return mdt
+    else:
+        return {}

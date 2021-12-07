@@ -13,7 +13,7 @@
               <table>
               <tr>
               <td>
-                <input type="text" name='target_domain' value="" class="form-control" placeholder="New Target exampledomain.com">
+                <input type="text" name='target_domain' value="" class="form-control" placeholder="IP, CIDR or TLD">
                </td>
                <td>
                 <input type="file" name="target_file">
@@ -21,10 +21,10 @@
                </td>
                <td>
                 <select name="mode">
-                <option value="merge" selected>Merge Mode</option>
-                <option value="delete">Delete Mode</option>
+                <option value="merge" selected>Merge</option>
+                <option value="delete">Delete</option>
 				<option value="deletebytag">Delete by Tag</option>                
-                <option value="sync">Sync Mode</option>
+                <option value="sync">Synchronize</option>
                 </select>
                </td>
                <td>
@@ -40,7 +40,7 @@
                 </table>                
               </div></span>
 </form>
-<b>Merge:</b>Add new objects only. <b>Delete:</b> Removes objects in the file list. <b>Sync:</b>Delete non present objects in the list, add new, only by matching TAG.
+<b>Merge:</b>Append new objects. <b>Delete:</b> Removes matching objects. <b>Sync:</b>Flush Orphans and append new assets by TAG.
 <form class="navbar-form" action="vd-export" method="post" style="display: inline;">
 	{%csrf_token%}
           <span class="bmd-form-group"><div class="input-group no-border">
@@ -59,9 +59,9 @@
 <form class="navbar-form" action="vd-in-targets" method="post">
  			{%csrf_token%}
              <span class="bmd-form-group"><div class="input-group no-border">
-             <input type="text" name='domain_search' value="{{ domain_search }}" class="form-control" placeholder="New Regex query">
+             <input type="text" name='domain_search' value="{{ domain_search }}" class="form-control" placeholder="New regex query">
 			 <input type="hidden" name="intargets_action" value="filter">
-             <button type="submit" class="btn btn-white btn-round btn-just-icon" rel="tooltip" title="" data-original-title="Search by Regular Expression">
+             <button type="submit" class="btn btn-white btn-round btn-just-icon" rel="tooltip" title="" data-original-title="Search by regex">
              <i class="material-icons">search</i>
              <div class="ripple-container"></div>
              </button>
@@ -78,7 +78,7 @@
              <input type="hidden" name='domain_search' value="{{ domain_search }}">
 			 <input type="hidden" name="intargets_action" value="filter">
 			 <input type="hidden" name="page" value="{{ query_page_prev }}">
-             <button type="submit" class="btn btn-white btn-round btn-just-icon" rel="tooltip" title="" data-original-title="Previous Page">
+             <button type="submit" class="btn btn-white btn-round btn-just-icon" rel="tooltip" title="" data-original-title="Previous page">
              <i class="material-icons">skip_previous</i>
              <div class="ripple-container"></div>
              </button>
@@ -95,7 +95,7 @@
              <input type="hidden" name='domain_search' value="{{ domain_search }}">
 			 <input type="hidden" name="intargets_action" value="filter">
 			 <input type="hidden" name="page" value="{{ query_page_next }}">
-             <button type="submit" class="btn btn-white btn-round btn-just-icon" rel="tooltip" title="" data-original-title="Next Page">
+             <button type="submit" class="btn btn-white btn-round btn-just-icon" rel="tooltip" title="" data-original-title="Next page">
              <i class="material-icons">skip_next</i>
              <div class="ripple-container"></div>
              </button>
@@ -110,8 +110,7 @@
             <div class="col-md-12">
               <div class="card">
                 <div class="card-header card-header-primary">
-                  <h4 class="card-title ">Domain List</h4>
-                  <p class="card-category"> This Domain List are treated as Targets</p>
+                  <h4 class="card-title ">Targets List</h4>
                 </div>
                 <div class="card-body">
                   <div class="table-responsive">
@@ -134,6 +133,9 @@
                         </th>
                         <th>
                           Count
+                        </th>
+                        <th>
+                          Owner
                         </th>
                         <th style="text-align: center;">
                           Tools
@@ -160,6 +162,11 @@
                           <td class="text-primary">
                             {{ item.itemcount }}
                           </td>
+                          <td class="text-primary">
+                          <span onclick="row = document.getElementById('metadata-{{ item.id }}'); if (row.style.display=='none') {row.style.display='';}else{row.style.display='none';}" style="display: inline;">
+                            {{ item.owner }}
+                           </span>
+                          </td>                          
                           <td style="text-align: center;">
 <!--                         <form method="post" action="vd-in-targets" style="display: inline;">
                         {%csrf_token%}
@@ -179,6 +186,12 @@
                         </form>
                           </td>
                         </tr>
+                        </tr>
+                        <tr>
+                        <td colspan=10 id="metadata-{{ item.id }}" style="display: none;">
+                        {{ item.metadata }}
+                        </td>
+                        </tr>
 
 {% endfor %}
                       </tbody>
@@ -194,9 +207,9 @@
 <form class="navbar-form" action="vd-in-targets" method="post">
  			{%csrf_token%}
              <span class="bmd-form-group"><div class="input-group no-border">
-             <input type="text" name='domain_search' value="{{ domain_search }}" class="form-control" placeholder="New Regex query">
+             <input type="text" name='domain_search' value="{{ domain_search }}" class="form-control" placeholder="New regex query">
 			 <input type="hidden" name="intargets_action" value="filter">
-             <button type="submit" class="btn btn-white btn-round btn-just-icon" rel="tooltip" title="" data-original-title="Search by Regular Expression">
+             <button type="submit" class="btn btn-white btn-round btn-just-icon" rel="tooltip" title="" data-original-title="Search by regex">
              <i class="material-icons">search</i>
              <div class="ripple-container"></div>
              </button>
@@ -213,7 +226,7 @@
              <input type="hidden" name='domain_search' value="{{ domain_search }}">
 			 <input type="hidden" name="intargets_action" value="filter">
 			 <input type="hidden" name="page" value="{{ query_page_prev }}">
-             <button type="submit" class="btn btn-white btn-round btn-just-icon" rel="tooltip" title="" data-original-title="Previous Page">
+             <button type="submit" class="btn btn-white btn-round btn-just-icon" rel="tooltip" title="" data-original-title="Previous page">
              <i class="material-icons">skip_previous</i>
              <div class="ripple-container"></div>
              </button>
@@ -230,7 +243,7 @@
              <input type="hidden" name='domain_search' value="{{ domain_search }}">
 			 <input type="hidden" name="intargets_action" value="filter">
 			 <input type="hidden" name="page" value="{{ query_page_next }}">
-             <button type="submit" class="btn btn-white btn-round btn-just-icon" rel="tooltip" title="" data-original-title="Next Page">
+             <button type="submit" class="btn btn-white btn-round btn-just-icon" rel="tooltip" title="" data-original-title="Next page">
              <i class="material-icons">skip_next</i>
              <div class="ripple-container"></div>
              </button>
