@@ -57,6 +57,9 @@ class Command(BaseCommand):
                     for service in Host.services:
                         MSG = service.getList()
                         MSG.update(MDT)
+                        MSG['hostname'] = Host.name
+                        MSG['hostnname'] = Host.nname
+                        MSG['ipv4'] = Host.ipv4
                         MSG['message'] = "[NMAP][New Service Found]"
                         delta(MSG)
                 
