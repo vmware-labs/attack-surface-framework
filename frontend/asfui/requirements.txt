@@ -1,7 +1,6 @@
-python-telegram-bot
 asgiref
 autopep8
-django==3.2.7
+django
 pycodestyle
 pytz
 sqlparse
