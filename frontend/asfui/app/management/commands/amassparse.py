@@ -1,12 +1,12 @@
 #!/usr/bin/python3
 from django.core.management.base import BaseCommand, CommandError
-from app.models import vdResult, vdServices
+from app.models import vdResult
 from django.utils import timezone
 import re
 from cProfile import label
-from app.views import autodetectType, delta, debug, PARSER_DEBUG, get_metadata
+from app.tools import autodetectType, delta, debug, PARSER_DEBUG, get_metadata
 import traceback
-#vdServices.objects.all().delete()
+
 class Command(BaseCommand):
     help = 'Amass interpreter'
 
@@ -34,7 +34,7 @@ class Command(BaseCommand):
                 line = Finding[1]
                 Finding = AMASS_SEPARATOR.split(line)
                 MDT,MDATA=get_metadata(Finding[0])
-                Result = vdResult(name=Finding[0], tags=Tag, info=Finding[1], type=autodetectType(Finding[0]), owner=MDT['owner'], metadata=MDATA)
+                Result = vdResult(name=Finding[0], tag=Tag, info=Finding[1], type=autodetectType(Finding[0]), owner=MDT['owner'], metadata=MDATA)
                 NewData = True
                 
                 try:
@@ -50,7 +50,7 @@ class Command(BaseCommand):
                     self.stdout.write("Searching:"+Finding[0])
                     OldData = vdResult.objects.filter(name=Finding[0])
                     self.stdout.write("Found and Updating:"+str(OldData[0].id)+":"+Tag+":"+Finding[1])
-                    OldData.update(info = Finding[1], tags = Tag)
+                    OldData.update(info = Finding[1], tag = Tag)
                 else:
                     MSG=Result.getList()
                     MSG.update(MDT)

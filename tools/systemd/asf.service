@@ -1,0 +1,10 @@
+[Unit]
+Description=Attack Surface Framework
+Requires=docker.service
+
+[Service]
+ExecStart=/bin/startasf.sh
+
+[Install]
+WantedBy=multi-user.target
+

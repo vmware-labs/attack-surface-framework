@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 #Target Abstractions, to avoid copy paste on functions
-# from app.views import debug, PARSER_DEBUG, autodetectType
+#from app.tools import debug, PARSER_DEBUG, autodetectType
 from datetime import date, datetime
 from django.utils import timezone
 from django.core.files.storage import FileSystemStorage
@@ -9,6 +9,8 @@ import json
 import os.path
 import subprocess
 import os
+from app.nuclei import *
+from app.tools import *
 
 def target_new_model(vdTargetModel,vdServicesModel,request,context,autodetectType,delta):
     if 'target_domain' in request.POST:
@@ -102,14 +104,7 @@ def internal_delete(vdTargetModel,vdServicesModel,DeleteTarget,autodetectType,de
         MSG['name'] = obj.name
         MSG['lastupdate'] = str(obj.lastdate)
         delta(MSG)
-        DeleteTarget.delete()
+        #At this point we delete also nuclei findings, related to domain deletion.
+        nuclei_delete_model(MSG)
 
-def get_metadata_array(metadata):
-    if len(metadata)>1:
-        mdt = json.loads(metadata)
-        if mdt is None:
-            return {}
-        else:
-            return mdt
-    else:
-        return {}
+    DeleteTarget.delete()

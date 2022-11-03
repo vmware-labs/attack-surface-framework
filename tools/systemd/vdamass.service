@@ -1,0 +1,7 @@
+[Unit]
+Description=Attack Surface Framework Amass Service Files
+Requires=docker.service
+
+[Service]
+ExecStart=/opt/asf/tools/subfinder/subfinder.sh
+

@@ -5,9 +5,9 @@
            target="_blank" rel="noopener noreferrer" 
            href="https://www.creative-tim.com/product/material-dashboard-django" class="simple-text logo-normal">
           </a>
-          
-          <img src="/static/assets/asf/logo2.png" width="50%">
  -->
+          <img src="/static/assets/asf/logo2.png" width="50%">
+
       </div>
       {% if user.is_authenticated %}
       <div class="sidebar-wrapper">
@@ -17,17 +17,7 @@
               <i class="material-icons">all_out</i>
               External
             </a>
-          </li>
-        
 			<ul class="nav" style="margin-left: 30px">
-        <!--
-			        <li class="nav-item {% if 'vd-dashboard' == segment %} active {% endif %}">
-            		<a class="nav-link" href="/vd-dashboard">
-              		<i class="material-icons">dashboard</i>
-              		<p>Dashboard</p>
-            		</a>
-          			</li>
-              -->
 		           <li class="nav-item {% if 'vd-targets' in segment %} active {% endif %}">
 		            <a class="nav-link" href="/vd-targets">
 		              <i class="material-icons">center_focus_strong</i>
@@ -37,13 +27,13 @@
 		             <li class="nav-item {% if 'vd-amass' in segment %} active {% endif %}">
 		            <a class="nav-link" href="/vd-amass">
 		              <i class="material-icons">library_books</i>
-		              <p>Discovery</p>
+		              <p>Subfinder Scans</p>
 		            </a>
 		          </li>
 		            <li class="nav-item {% if 'vd-portscan' in segment %} active {% endif %}">
 		            <a class="nav-link" href="/vd-portscan">
 		              <i class="material-icons">bubble_chart</i>
-		              <p>Enumeration</p>
+		              <p>Port Scans</p>
 		            </a>
 		          </li>
 		    </ul>
@@ -54,13 +44,6 @@
              Internal
             </a>		    
 		    <ul class="nav"  style="margin-left: 30px">
-<!--		    		 <li class="nav-item {% if 'vd-in-dashboard' == segment %} active {% endif %}">
-            		<a class="nav-link" href="/vd-in-dashboard">
-              		<i class="material-icons">dashboard</i>
-              		<p>Dashboard</p>
-            		</a>
-          			</li>
-              -->
 		           <li class="nav-item {% if 'vd-in-targets' in segment %} active {% endif %}">
 		            <a class="nav-link" href="/vd-in-targets">
 		              <i class="material-icons">center_focus_strong</i>
@@ -70,7 +53,7 @@
 	            	<li class="nav-item {% if 'vd-in-portscan' in segment %} active {% endif %}">
 		            <a class="nav-link" href="/vd-in-portscan">
 		              <i class="material-icons">bubble_chart</i>
-		              <p>Enumeration</p>
+		              <p>Port Scans</p>
 		            </a>
 		          	</li>
 		    </ul>
@@ -81,6 +64,19 @@
               <p>Red Team</p>
             </a>
           </li>
+           <li class="nav-item {% if 'vd-nuclei' in segment %} active {% endif %}">
+            <a class="nav-link" href="/vd-nuclei">
+              <i class="material-icons">api</i>
+              <p>Alerts</p>
+            </a>
+          </li>
+          <li class="nav-item {% if 'vd-nuclei-templates' in segment %} active {% endif %}">
+            <a class="nav-link" href="/vd-nuclei-templates">
+              <i class="material-icons">api</i>
+              <p>Nuclei Templates</p>
+            </a>
+          </li>          
+                    
 <!--
              <li class="nav-item {% if 'ui-typography' in segment %} active {% endif %}">
             <a class="nav-link" href="/ui-typography.html">
@@ -124,13 +120,12 @@
               <p>See product</p>
             </a>
           </li> -->
-<!--         <li class="nav-item {% if 'page-user' in segment %} active {% endif %}">
+          <li class="nav-item {% if 'page-user' in segment %} active {% endif %}">
             <a class="nav-link" href="/page-user.html">
               <i class="material-icons">person</i>
               <p>User Profile</p>
             </a>
           </li>
-        -->
         </ul>
       </div>
       {% endif %}

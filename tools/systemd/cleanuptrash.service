@@ -1,0 +1,7 @@
+[Unit]
+Description=Attack Surface Framework Cleanup the Trash folder
+Requires=docker.service
+
+[Service]
+ExecStart=/opt/asf/tools/alertmonitor/cleanup_trash.sh
+

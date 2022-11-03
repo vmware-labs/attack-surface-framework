@@ -1,0 +1,11 @@
+[Unit]
+Description=Attack Surface Framework Amass Service Files
+Requires=docker.service
+
+[Timer]
+OnCalendar=Mon,Tue,Wed,Thu,Fri,Sat,Sun 10:30
+Unit=vdamass.service
+
+[Install]
+WantedBy=multi-user.target
+

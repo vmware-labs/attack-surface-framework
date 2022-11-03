@@ -1,0 +1,7 @@
+[Unit]
+Description=Attack Surface Framework External Nmap Service File
+Requires=docker.service
+
+[Service]
+ExecStart=/opt/asf/tools/nmap/nmap.sh
+

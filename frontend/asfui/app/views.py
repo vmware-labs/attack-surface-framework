@@ -1,5 +1,5 @@
 # -*- encoding: utf-8 -*-
-
+from django.utils.safestring import mark_safe
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, get_object_or_404, redirect
 from django.template import loader
@@ -10,7 +10,7 @@ from django.core.management import call_command
 from datetime import date, datetime
 import time
 
-from .models import vdTarget, vdInTarget, vdResult, vdServices, vdInServices, vdRegExp, vdJob   
+from .models import vdTarget, vdInTarget, vdResult, vdServices, vdInServices, vdRegExp, vdJob, vdNucleiResult
 
 from os import path
 import pathlib
@@ -22,9 +22,13 @@ import csv
 import shutil
 import json
 import hashlib
+from app.tools import *
+from app.search import *
 from app.systemd import sdService, DaysOfWeek
 from app.metasploitbr import *
 from app.targets import *
+from app.nuclei import *
+from app.discovery import *
 
 GENERAL_PAGE_SIZE = 50
 
@@ -48,131 +52,86 @@ def pager(context, page, page_size, count):
     
     return slice(start,stop)
 
-def search(RegExp, Model_NAME, ExcludeRegExp = ""):
-    sys.stderr.write("Starting search function for module:"+Model_NAME+" with Regexp:"+RegExp+" Excluding:"+ExcludeRegExp+"\n")
-    def add_hosts(partial, results):
-        sys.stderr.write("[SEARCH]: merging hosts from query\n")
-#         partial = partial.values_list()
-#         results.append(partial)
-#        results.union(partial)
-        results = results | partial
-        sys.stderr.write("[APPEND]:"+str(results)+"\n")
-#         for host in partial:
-#             if host not in results:
-#                 sys.stderr.write("[APPEND]:"+str(host)+"\n")
-#                 results.append(host)
-        return results
-    
-    def search_services(RegExp, ExcludeRegExp):
-        sys.stderr.write("[SEARCH]: Searching in any host services\n")
-        results = vdServices.objects.none()
-        partial = vdServices.objects.filter(info__regex=RegExp)
-        if ExcludeRegExp != "":
-            partial = partial.exclude(info__regex=ExcludeRegExp)
-        results = add_hosts(partial, results)
-        partial = vdServices.objects.filter(service_ssh__regex=RegExp)
-        if ExcludeRegExp != "":
-            partial = partial.exclude(service_ssh__regex=ExcludeRegExp)
-        results = add_hosts(partial, results)
-        partial = vdServices.objects.filter(service_rdp__regex=RegExp)
-        if ExcludeRegExp != "":
-            partial = partial.exclude(service_rdp__regex=ExcludeRegExp)
-        results = add_hosts(partial, results)
-        partial = vdServices.objects.filter(service_ftp__regex=RegExp)
-        if ExcludeRegExp != "":
-            partial = partial.exclude(service_ftp__regex=ExcludeRegExp)
-        results = add_hosts(partial, results)
-        partial = vdServices.objects.filter(service_smb__regex=RegExp)
-        if ExcludeRegExp != "":
-            partial = partial.exclude(service_smb__regex=ExcludeRegExp)
-        results = add_hosts(partial, results)
-        partial = vdServices.objects.filter(service_telnet__regex=RegExp)
-        if ExcludeRegExp != "":
-            partial = partial.exclude(service_telnet__regex=ExcludeRegExp)
-        results = add_hosts(partial, results)
-        partial = vdServices.objects.filter(nuclei_http__regex=RegExp)
-        if ExcludeRegExp != "":
-            partial = partial.exclude(nuclei_http__regex=ExcludeRegExp)
-        results = add_hosts(partial, results)
-        partial = vdServices.objects.filter(owner=RegExp)
-        if ExcludeRegExp != "":
-            partial = partial.exclude(owner=ExcludeRegExp)
-        results = add_hosts(partial, results)
-        return results
+@login_required(login_url="/login/")
+def nuclei(request):
+    context = {}
+    context['segment'] = 'vd-nuclei'
+    global PARSER_DEBUG
+    PARSER_DEBUG=True
+    debug(request.POST)
+#Delete a NucleiFinding
+    def nuclei_delete():
+        nuclei_delete_model(request.POST)
 
-    def search_inservices(RegExp, ExcludeRegExp):
-        sys.stderr.write("[SEARCH]: Searching in any host services\n")
-        results = vdInServices.objects.none()
-        partial = vdInServices.objects.filter(info__regex=RegExp)
-        if ExcludeRegExp != "":
-            partial = partial.exclude(info__regex=ExcludeRegExp)
-        results = add_hosts(partial, results)
-        partial = vdInServices.objects.filter(service_ssh__regex=RegExp)
-        if ExcludeRegExp != "":
-            partial = partial.exclude(service_ssh__regex=ExcludeRegExp)
-        results = add_hosts(partial, results)
-        partial = vdInServices.objects.filter(service_rdp__regex=RegExp)
-        if ExcludeRegExp != "":
-            partial = partial.exclude(service_rdp__regex=ExcludeRegExp)
-        results = add_hosts(partial, results)
-        partial = vdInServices.objects.filter(service_ftp__regex=RegExp)
-        if ExcludeRegExp != "":
-            partial = partial.exclude(service_ftp__regex=ExcludeRegExp)
-        results = add_hosts(partial, results)
-        partial = vdInServices.objects.filter(service_smb__regex=RegExp)
-        if ExcludeRegExp != "":
-            partial = partial.exclude(service_smb__regex=ExcludeRegExp)
-        results = add_hosts(partial, results)
-        partial = vdInServices.objects.filter(service_telnet__regex=RegExp)
-        if ExcludeRegExp != "":
-            partial = partial.exclude(service_telnet__regex=ExcludeRegExp)
-        results = add_hosts(partial, results)
-        partial = vdInServices.objects.filter(nuclei_http__regex=RegExp)
-        if ExcludeRegExp != "":
-            partial = partial.exclude(nuclei_http__regex=ExcludeRegExp)
-        results = add_hosts(partial, results)
-        partial = vdInServices.objects.filter(owner=RegExp)
-        if ExcludeRegExp != "":
-            partial = partial.exclude(owner=ExcludeRegExp)
-        results = add_hosts(partial, results)        
-        return results
+    def nuclei_false():
+        nuclei_tfp_model(request.POST)
 
-    def search_amass(RegExp, ExcludeRegExp):
-        sys.stderr.write("[SEARCH]: Searching in any host from amass\n")
-        results = vdResult.objects.none()
-        partial = vdResult.objects.filter(name__regex=RegExp)
-        if ExcludeRegExp != "":
-            partial = partial.exclude(name__regex=RegExp)
-        results = add_hosts(partial, results)
-        partial = vdResult.objects.filter(metadata__regex=RegExp)
-        if ExcludeRegExp != "":
-            partial = partial.exclude(metadata__regex=RegExp)
-        results = add_hosts(partial, results)        
-        return results
-    
-    def search_targets(RegExp, ExcludeRegExp):
-        return search_targets_by_model(RegExp, ExcludeRegExp, vdTarget)
+    def nuclei_true():
+        nuclei_tfp_model(request.POST)
+        
+    def nuclei_bump():
+        nuclei_tfp_model(request.POST)
 
-    def search_intargets(RegExp, ExcludeRegExp):
-        return search_targets_by_model(RegExp, ExcludeRegExp, vdInTarget)
+    def nuclei_ptime():
+        set_nuclei_ptime(request.POST)
+#Dirty solution since python lacks of switch case :\
+    action={'true':nuclei_true, 'false':nuclei_false, 'delete':nuclei_delete, 'bump':nuclei_bump, 'ptime':nuclei_ptime}
+    if 'nuclei_action' in request.POST:
+        if request.POST['nuclei_action'] in action:
+            action[request.POST['nuclei_action']]()
 
-#Master Search for Targets
-    def search_targets_by_model(RegExp, ExcludeRegExp, vdTargetModel):
-        sys.stderr.write("[SEARCH]: Searching in any host from "+vdTargetModel._meta.object_name+"\n")
-        results = vdTargetModel.objects.none()
-        partial = vdTargetModel.objects.filter(name__regex=RegExp)
-        if ExcludeRegExp != "":
-            partial = partial.exclude(name__regex=RegExp)
-        results = add_hosts(partial, results)
-        partial = vdTargetModel.objects.filter(metadata__regex=RegExp)
-        if ExcludeRegExp != "":
-            partial = partial.exclude(metadata__regex=RegExp)
-        results = add_hosts(partial, results)
-        return results
+#Query all objects    
+    page = 0
+    page_size = GENERAL_PAGE_SIZE
+    if 'page' in request.POST:
+        page = int(request.POST['page'])
+        
+    if 'domain_search' in request.POST:
+        DomainRegexpFilter=request.POST['domain_search']
+        context['domain_search'] = DomainRegexpFilter
+        #context['query_results'] = vdResult.objects.filter(name__regex=DomainRegexpFilter)
+        context['query_results'] = search(DomainRegexpFilter, 'nuclei')
+        filters,context['query_results'] = nuclei_filter(request.POST,context['query_results'])
+        context.update(filters)
                 
-    action={'services':search_services, 'amass':search_amass, 'service':search_services, 'inservices':search_inservices, 'targets':search_targets, 'intargets':search_intargets}
-    if Model_NAME in action:
-        return action[Model_NAME](RegExp, ExcludeRegExp)
+        context['query_count'] = context['query_results'].count()
+        #context['query_count'] = len(context['query_results'])
+        slicer = pager(context, page, page_size, context['query_count'])
+        context['query_results'] = context['query_results'][slicer]
+    else:
+        context['query_results'] = vdNucleiResult.objects.all()
+        filters,context['query_results'] = nuclei_filter(request.POST,context['query_results'])
+        context.update(filters)        
+        context['query_count'] = context['query_results'].count()
+        slicer = pager(context, page, page_size, context['query_count'])
+        context['query_results'] = context['query_results'][slicer]
+    context['nuclei_selector']=mark_safe(get_nuclei_ptime_selector(request.POST))
+    context['nuclei_filter_hidden']=mark_safe(get_nuclei_filter_hidden(request.POST))
+    html_template = loader.get_template( 'vd-nuclei.html' )
+    return HttpResponse(html_template.render(context, request))    
+
+@login_required(login_url="/login/")
+def nucleitemplates(request):
+    context = {}
+    context['segment'] = 'vd-nuclei-templates'
+    global PARSER_DEBUG
+    PARSER_DEBUG=True
+#Set NucleiTemplates
+    def nuclei_blacklist(context):
+        debug(context)
+        return
+#Dirty solution since python lacks of switch case :\
+    action={'blacklist':nuclei_blacklist}
+    if 'nuclei_action' in request.POST:
+        if request.POST['nuclei_action'] in action:
+            action[request.POST['nuclei_action']](request.POST)
+    nuclei_templates=get_nuclei_templates()
+    context['query_results']=get_nuclei_templates_4view(nuclei_templates)
+#     context['nuclei_filter_hidden']=mark_safe(get_nuclei_filter_hidden(request.POST))
+    debug(request.POST)
+    set_nuclei_templates_4bl(request.POST, nuclei_templates)
+    html_template = loader.get_template( 'vd-nuclei-templates.html' )
+    return HttpResponse(html_template.render(context, request))    
 
 @login_required(login_url="/login/")
 def targets(request):
@@ -310,41 +269,35 @@ def amass(request):
     context['segment'] = 'vd-amass'
     ensure_dirs("/home/amass/reports")
 
-    if path.isfile("/home/amass/reports/amass.txt"):
+    if path.isfile("/home/discovery/.lock"):
         context['running'] = True
     else:
         context['running'] = False
 #start amass
     def amass_start():
-        #Targets=vdTarget.objects.all()
-        Targets=vdTarget.objects.filter(type='DOMAIN')
-        FileTargets=open("/home/amass/targets.txt",'w+')
-        for domain in Targets:
-            FileTargets.write(domain.name+"\n")
-        sys.stdout.write("Starting Amass")
-        FileTargets.close()
-        subprocess.Popen(["nohup", "/opt/asf/tools/amass/amass.sh"])
+        #subprocess.Popen(["nohup", "/opt/asf/tools/amass/amass.sh"])
+        subprocess.Popen(["nohup", "/opt/asf/tools/subfinder/subfinder.sh"])
         context['running'] = True
 
 #stop amass
     def amass_stop():
         sys.stdout.write("Stopping Amass")
-        subprocess.Popen(["killall", "amass.sh"])
-        if path.exists("/home/amass/reports/amass.txt"):
-            os.remove("/home/amass/reports/amass.txt")
-        subprocess.Popen(["killall", "amass"])
+        #subprocess.Popen(["killall", "amass.sh"])
+        subprocess.Popen(["killall", "subfinder.sh"])
+        #if path.exists("/home/amass/reports/amass.txt"):
+        if path.exists("/home/discovery/.lock"):
+            #os.remove("/home/amass/reports/amass.txt")
+            os.remove("/home/discovery/.lock")
+        #subprocess.Popen(["killall", "amass"])
+        subprocess.Popen(["killall", "subfinder"])
         context['running'] = False
         return
-        
+    
+    def amass_new():
+        discovery_new(request,context,autodetectType,delta)
+                
     def amass_delete():
-        sys.stdout.write("Deleting Amass Host")
-        if 'id' in request.POST:
-            try:
-                HostName = vdResult.objects.filter(id=request.POST['id'])
-                HostName.delete()
-            except Exception as e:
-                sys.stdout.write(str(e))
-        return
+        return discovery_delete(request,context,autodetectType,delta)
    
     def amass_total_purge():
         debug("Total Purge: Amass Host\n")
@@ -369,12 +322,13 @@ def amass(request):
         AmassService.readTimerFromRequest(request)
         AmassService.config['Unit']['Description'] = "Attack Surface Framework Amass Service Files"
         AmassService.config['Unit']['Requires'] = "docker.service"
-        AmassService.config['Service']['ExecStart'] = "/opt/asf/tools/amass/amass.sh" 
+        #AmassService.config['Service']['ExecStart'] = "/opt/asf/tools/amass/amass.sh" 
+        AmassService.config['Service']['ExecStart'] = "/opt/asf/tools/subfinder/subfinder.sh"
         AmassService.write()
         return True
     
 #Same dirty solution
-    action={'start':amass_start, 'stop':amass_stop, 'delete':amass_delete, 'total_purge':amass_total_purge, 'partial_load':amass_partial_load, 'schedule':amass_schedule}
+    action={'new': amass_new, 'start':amass_start, 'stop':amass_stop, 'delete':amass_delete, 'total_purge':amass_total_purge, 'partial_load':amass_partial_load, 'schedule':amass_schedule}
     if 'amass_action' in request.POST:
         if request.POST['amass_action'] in action:
             debug("Excecuting :"+request.POST['amass_action'])
@@ -458,7 +412,7 @@ def portscan(request):
                         PICTURE = "/static/hosts/"+Host.name+"/"+str(file)
                         break
             NEW_INFO = Host.info + "\n========== BruteForce ==========\n" + Host.service_ssh + Host.service_ftp +" "+ Host.service_rdp +" "+ Host.service_telnet + " " +  Host.service_smb + "\n\n========== Nuclei ==========\n" + Host.nuclei_http
-            H = {'id':Host.id, 'screenshot':PICTURE, 'name':Host.name, 'nname':Host.nname, 'ipv4':Host.ipv4, 'lastdate':Host.lastdate, 'ports':Host.ports, 'info':NEW_INFO, 'owner':Host.owner, 'metadata':Host.metadata}
+            H = {'id':Host.id, 'screenshot':PICTURE, 'name':Host.name, 'nname':Host.nname, 'ipv4':Host.ipv4, 'lastdate':Host.lastdate, 'ports':Host.ports, 'info':NEW_INFO, 'owner':Host.owner, 'tag':Host.tag, 'metadata':Host.metadata}
             NEW_HWS.append(H)
         return NEW_HWS
         
@@ -585,7 +539,7 @@ def inportscan(request):
                         PICTURE = "/static/hosts/"+Host.name+"/"+str(file)
                         break
             NEW_INFO = Host.info + "\n========== BruteForce ==========\n" + Host.service_ssh + Host.service_ftp +" "+ Host.service_rdp +" "+ Host.service_telnet + " " +  Host.service_smb + "\n\n========== Nuclei ==========\n" + Host.nuclei_http
-            H = {'id':Host.id, 'screenshot':PICTURE, 'name':Host.name, 'nname':Host.nname, 'ipv4':Host.ipv4, 'lastdate':Host.lastdate, 'ports':Host.ports, 'info':NEW_INFO, 'owner':Host.owner, 'metadata':Host.metadata}
+            H = {'id':Host.id, 'screenshot':PICTURE, 'name':Host.name, 'nname':Host.nname, 'ipv4':Host.ipv4, 'lastdate':Host.lastdate, 'ports':Host.ports, 'info':NEW_INFO, 'owner':Host.owner, 'tag':Host.tag, 'metadata':Host.metadata}
             NEW_HWS.append(H)
         return NEW_HWS
         
@@ -684,7 +638,7 @@ def redteam(request):
         tstring = today.strftime("%m/%d/%y")
         modules = []
         MODULE_FOLDER = "/opt/asf/redteam/"
-        for inode in os.listdir(MODULE_FOLDER):
+        for inode in sorted(os.listdir(MODULE_FOLDER)):
             if path.isdir(MODULE_FOLDER+inode):
                 if path.exists(MODULE_FOLDER+inode+"/start"):
                     info = "Info File not found on "+inode
@@ -708,10 +662,11 @@ def redteam(request):
         return RunningJobs
     
     def retrieve_metadata(JobsArray):
-        #This function suddnely does much more than detect reports, also pass it trow cmdargs and scheduling, there is no way to split it in other functions
+        #This function suddnely does much more than detect reports, also pass it trough cmdargs and scheduling, there is no way to split it in other functions
         #Perhaps a proper clear way should be changing the name of this function, populate_info, or retrieve_current_info, or something like that
         NUMERICAL_REGEXP = re.compile("[0-9]*")
         REPORT_REGEXP = ["**/*.[tT][xX][tT]", "**/*.[hH][tT][mM][lL]*", "**/*.[cC][sS][vV]", "**/*.[nN][mM][aA][pP]"] 
+        REPORT_EXCLUDE = ['slice']
         CMDARG_REGEXP = re.compile("\d+\.cmdarg")
         JOBS_FOLDER = "/home/asf/jobs/"
         REPORTS = {}
@@ -723,17 +678,23 @@ def redteam(request):
             JOB_MODULE = "/opt/asf/redteam/"+Job.module+"/"
             #sys.stderr.write(JOB_FOLDER+"\n")
             if path.exists(JOB_FOLDER):
-                for inode in os.listdir(JOB_FOLDER):
+                for inode in sorted(os.listdir(JOB_FOLDER)):
                     if path.isdir(JOB_FOLDER+inode) and NUMERICAL_REGEXP.match(JOB_FOLDER+inode):
                         #sys.stderr.write(inode+"\n")
                         for pattern in REPORT_REGEXP:
                             for recursive_inode in pathlib.Path(JOB_FOLDER+inode).glob(pattern):
                                 FCOMP = "/static/jobs/"+str(Job.id)+"/"+inode+"/"+str(recursive_inode).rsplit("/"+inode+"/", 4)[1]
-                                JOB_REPORTS.append({'name':inode, 'file':FCOMP})
-                                #sys.stderr.write(str(recursive_inode)+":"+FCOMP+"\n")
+                                EXCLUDE_FLAG = False
+                                for EXCLUDE in REPORT_EXCLUDE:
+                                    if EXCLUDE in FCOMP:
+                                        EXCLUDE_FLAG = True
+                                if not EXCLUDE_FLAG:
+                                    JOB_REPORTS.append({'name':inode, 'file':FCOMP})
+                                    #sys.stderr.write(str(recursive_inode)+":"+FCOMP+"\n")
+            HINTTXT = ""
             if path.exists(JOB_MODULE):
                 sys.stderr.write(JOB_MODULE+"\n")
-                for inode in os.listdir(JOB_MODULE):
+                for inode in sorted(os.listdir(JOB_MODULE)):
                     #sys.stderr.write(inode+"\n")
                     if path.isfile(JOB_MODULE+inode) and CMDARG_REGEXP.match(inode):
                         #sys.stderr.write("Match:"+inode+"\n")
@@ -743,11 +704,10 @@ def redteam(request):
                             ARGFILE = open(JOB_FOLDER+inode,'r')
                         else:
                             ARGFILE = open(JOB_MODULE+inode,'r')
-                        
+
                         ARGCONTENT = ARGFILE.read().rstrip()
                         ARGFILE.close()
                         JOB_CMDARGS.append({'name':NARG, 'arg':ARGCONTENT})
-                HINTTXT = ""
                 if path.isfile(JOB_MODULE+"hint.cmdarg"):
                     HINT = open(JOB_MODULE+"hint.cmdarg",'r')
                     HINTTXT = HINT.read().rstrip()
@@ -973,9 +933,9 @@ def export(request):
 # Create the HttpResponse object with the appropriate CSV header.
     def export_amass(writer):
         query = vdResult.objects.all()
-        writer.writerow(['name', 'type', 'ipv4', 'lastdate', 'tags', 'info'])
+        writer.writerow(['name', 'type', 'ipv4', 'lastdate', 'tag', 'info'])
         for host in query:
-            writer.writerow([host.name, host.type, host.ipv4, host.lastdate, host.tags, host.info])
+            writer.writerow([host.name, host.type, host.ipv4, host.lastdate, host.tag, host.info])
         return
     
     def export_services(writer):
@@ -991,9 +951,9 @@ def export(request):
                 sys.stderr.write("Error looking for the regular expression\n")
                 
         query = search(regexp, 'services', exclude)
-        writer.writerow(['name', 'cname', 'ipv4', 'lastdate', 'ports', 'full_ports', 'service_ssh', 'service_rdp', 'service_telnet', 'service_ftp', 'service_smb', 'nuclei_http', 'owner', 'metadata'])
+        writer.writerow(['name', 'cname', 'ipv4', 'lastdate', 'ports', 'full_ports', 'service_ssh', 'service_rdp', 'service_telnet', 'service_ftp', 'service_smb', 'nuclei_http', 'owner', 'tag', 'metadata'])
         for host in query:
-            writer.writerow([host.name, host.nname, host.ipv4, host.lastdate, host.ports, host.full_ports, host.service_ssh, host.service_rdp, host.service_telnet, host.service_ftp, host.service_smb, host.nuclei_http, host.owner, host.metadata])
+            writer.writerow([host.name, host.nname, host.ipv4, host.lastdate, host.ports, host.full_ports, host.service_ssh, host.service_rdp, host.service_telnet, host.service_ftp, host.service_smb, host.nuclei_http, host.owner, host.tag, host.metadata])
         return
 
     def export_inservices(writer):
@@ -1009,9 +969,9 @@ def export(request):
                 sys.stderr.write("Error looking for the regular expression\n")
                 
         query = search(regexp, 'inservices', exclude)
-        writer.writerow(['name', 'cname', 'ipv4', 'lastdate', 'ports', 'full_ports', 'service_ssh', 'service_rdp', 'service_telnet', 'service_ftp', 'service_smb', 'nuclei_http', 'owner', 'metadata'])
+        writer.writerow(['name', 'cname', 'ipv4', 'lastdate', 'ports', 'full_ports', 'service_ssh', 'service_rdp', 'service_telnet', 'service_ftp', 'service_smb', 'nuclei_http', 'owner', 'tag', 'metadata'])
         for host in query:
-            writer.writerow([host.name, host.nname, host.ipv4, host.lastdate, host.ports, host.full_ports, host.service_ssh, host.service_rdp, host.service_telnet, host.service_ftp, host.service_smb, host.nuclei_http, host.owner, host.metadata])
+            writer.writerow([host.name, host.nname, host.ipv4, host.lastdate, host.ports, host.full_ports, host.service_ssh, host.service_rdp, host.service_telnet, host.service_ftp, host.service_smb, host.nuclei_http, host.owner, host.tag, host.metadata])
         return
     
     def export_targets(writer):
@@ -1027,7 +987,14 @@ def export(request):
         for host in query:
             writer.writerow([host.name, host.type, host.lastdate, host.itemcount, host.tag, host.owner, host.metadata])
         return
-    
+
+    def export_nuclei(writer):
+        query = vdNucleiResult.objects.all()
+        writer.writerow(['name', 'type', 'tfp', 'lastdate', 'vulnerability', 'info', 'full_uri', 'metadata'])
+        for host in query:
+            writer.writerow([host.name, host.type, host.tfp, host.lastdate, host.vulnerability, host.info, host.full_uri, host.metadata])
+        return
+        
     def export_cypher_ex(writer):
         return export_cypher(writer,'services')
     
@@ -1163,7 +1130,7 @@ def export(request):
     
     response = HttpResponse(content_type='text/csv')
     writer = csv.writer(response, delimiter='\t')
-    export_model={'amass':export_amass, 'services':export_services, 'inservices':export_inservices, 'targets':export_targets, 'intargets':export_intargets}
+    export_model={'amass':export_amass, 'services':export_services, 'inservices':export_inservices, 'targets':export_targets, 'intargets':export_intargets, 'nuclei':export_nuclei}
     export_cypher_model={'services_cypher':export_cypher_ex, 'inservices_cypher':export_cypher_in}
     if 'model' in request.POST:
         model = request.POST['model']
@@ -1200,100 +1167,4 @@ def pages(request):
     
         html_template = loader.get_template( 'page-500.html' )
         return HttpResponse(html_template.render(context, request))
-
-# This classes and functions are meant to be exported, to avoid duplicates between modules, commands or else.
-PARSER_DEBUG=True
-def debug(text):
-    if PARSER_DEBUG:
-        sys.stderr.write(str(text))
-    return
-
-DETECTOR_IPADDRESS = re.compile("^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$")
-DETECTOR_CIDR = re.compile("^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\/\d{1,2}$")
-DETECTOR_SHA256 = re.compile("^[A-Fa-f0-9]{64}$")
-DETECTOR_MD5 = re.compile("^[A-Fa-f0-9]{32}$")
-#DETECTOR_DOMAIN = re.compile("^[a-z0-9]([a-z0-9-]+\.){1,}[a-z0-9]+\Z")
-DETECTOR_DOMAIN = re.compile("^(?!\-)(?:[a-zA-Z\d\-]{0,62}[a-zA-Z\d]\.){1,126}(?!\d+)[a-zA-Z\d]{1,63}$")
-DETECTOR_EMAIL = re.compile("^[A-Za-z0-9\.\+-]+@[A-Za-z0-9\.-]+\.[a-zA-Z]*$")
-DETECTOR_SOURCE = re.compile("^\[[A-Za-z0-9 ]+\].*")
-def autodetectType(IOC):
-    global DETECTOR_IPADDRESS
-    global DETECTOR_CIDR
-    global DETECTOR_SHA256
-    global DETECTOR_MD5
-    global DETECTOR_DOMAIN
-    global DETECTOR_EMAIL
-    global DETECTOR_SOURCE
     
-    if DETECTOR_IPADDRESS.match(IOC):
-        return "ADDR"
-    if DETECTOR_CIDR.match(IOC):
-        return "CIDR"
-    if IOC.lower().startswith("http"):
-        return "URL"
-    if DETECTOR_DOMAIN.match(IOC):
-        return "DOMAIN"
-    if DETECTOR_SHA256.match(IOC):
-        return "FILE_HASH"
-    if DETECTOR_MD5.match(IOC):
-        return "FILE_HASH"
-    if DETECTOR_EMAIL.match(IOC):
-        return "EMAIL"
-    return "Unknown"
-
-    
-def ensure_dirs(DIR_PATHS):
-    if type(DIR_PATHS) is not list:
-        PATHS = [DIR_PATHS]
-    else:
-        PATHS = DIR_PATHS
-        
-    for DIR in PATHS:
-        #debug("Ensure existence of this directory: "+str(DIR)+"\n")
-        if not os.path.isdir(DIR):
-            os.makedirs(DIR)
-            
-def delta(info):
-    JOURNAL_DIR = "/home/asf/alerts/journal/"
-    QUEUE_DIR = "/home/asf/alerts/queue/"
-    LOGS_DIR = "/home/asf/alerts/logs/"
-    DIRS = [JOURNAL_DIR, QUEUE_DIR, LOGS_DIR]
-    ensure_dirs(DIRS)
-    #Adding timestamp
-    dt = datetime.now()
-    info['timestamp']=str(dt.timestamp())
-    info['datestamp']=str(dt)
-    info['year'] = str(dt.year)
-    info['month'] = str(dt.month)
-    info['day'] = str(dt.day)
-    info['hour'] = str(dt.hour)
-    info['minute'] = str(dt.minute)
-    info['second'] = str(dt.second)
-    #Creating a Hash fom info, this will be the file name in the Journal while it's weitten
-    INFO_HASH = hashlib.sha256(str(info).encode('utf-8')).hexdigest()
-    FILE_IN_JOURNAL = JOURNAL_DIR+INFO_HASH
-    FIN = open(FILE_IN_JOURNAL, "w+")
-    json_info=json.dumps(info)
-    FIN.write(json_info)
-    #Required new line for using basic shell monitor (CAT does not print new lines if not exist)
-    FIN.write("\n")
-    FIN.close()
-    #File is written, now will be moved to queue
-    shutil.move(FILE_IN_JOURNAL, QUEUE_DIR+INFO_HASH)
-    debug("Created new alert in queue:"+INFO_HASH+":"+str(info)+":"+json_info+"\n")
-    return True
-
-def get_metadata(id,scope='internal'):
-    TargetModel = vdInTarget
-    if scope=='external':
-        TargetModel = vdTarget
-    Query = TargetModel.objects.filter(name=id)
-    if Query.exists():
-        debug("Found:"+str(Query[0].metadata)+"\n\n")
-        return get_metadata_array(Query[0].metadata),Query[0].metadata
-    else:
-        if scope=='internal':
-            return get_metadata(id, 'external')
-        METADATA = {}
-        METADATA['owner'] = 'Unknown'
-        return METADATA, json.dumps(METADATA)

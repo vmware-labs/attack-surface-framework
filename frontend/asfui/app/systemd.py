@@ -5,7 +5,7 @@ import os.path
 import subprocess
 import os
 
-#from app.views import debug
+#from app.tools import debug
 
 DaysOfWeek = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 MainDictionaries = ['Unit', 'Timer', 'Service', 'Install']

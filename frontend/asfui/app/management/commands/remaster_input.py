@@ -1,8 +1,9 @@
 #!/usr/bin/python3
+#VER:1
 from django.core.management.base import BaseCommand, CommandError
 from django.utils import timezone
 from cProfile import label
-from app.models import vdTarget, vdInTarget, vdResult, vdServices, vdInServices, vdRegExp, vdJob  
+from app.models import *
 
 from os import path
 import sys
@@ -13,7 +14,8 @@ import argparse
 from urllib.request import localhost
 #Search function inside views.py, main search for inputs, this module needs to comply with the regexp query logic
 
-from app.views import search, PARSER_DEBUG
+from app.tools import *
+from app.search import *
 from app.nmapmodels import NMService, NMHost
 
 #Static and Global Declarations

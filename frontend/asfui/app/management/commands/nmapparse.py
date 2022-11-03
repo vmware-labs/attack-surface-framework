@@ -4,7 +4,7 @@ from app.models import vdTarget, vdResult, vdServices, vdInServices, vdRegExp, v
 from django.utils import timezone
 import re, json
 from cProfile import label
-from app.views import autodetectType, delta, debug, get_metadata, PARSER_DEBUG
+from app.tools import autodetectType, delta, debug, get_metadata, PARSER_DEBUG
 from app.nmapmodels import NMAP_PORTS, NMHost, NMService
 
 class Command(BaseCommand):
@@ -22,7 +22,7 @@ class Command(BaseCommand):
         last_report=kwargs['input']
         host = kwargs['host']
         PARSER_DEBUG = kwargs['debug']
-        debug("Process:"+last_report+":"+host)
+        debug("Process:"+str(last_report)+":"+str(host))
         report=open(last_report+".nmap",'r')
         report_content = report.read()
         report.close()
@@ -34,9 +34,9 @@ class Command(BaseCommand):
                 Host = NMHost(line, host)
                 MDT,MDATA = get_metadata(Host.name,kwargs['destination'])
                 if kwargs['destination'] == "external":
-                    Result = vdServices(name=Host.name, nname=Host.nname, ipv4=Host.ipv4, tags="[Services]", info = report_content, ports = Host.full_ports, full_ports = Host.full_ports, info_gnmap = Host.line, type=autodetectType(Host.name), metadata = MDATA, owner = MDT['owner'])
+                    Result = vdServices(name=Host.name, nname=Host.nname, ipv4=Host.ipv4, tag=MDT['tag'], info = report_content, ports = Host.full_ports, full_ports = Host.full_ports, info_gnmap = Host.line, type=autodetectType(Host.name), metadata = MDATA, owner = MDT['owner'])
                 if kwargs['destination'] == "internal":
-                    Result = vdInServices(name=Host.name, nname=Host.nname, ipv4=Host.ipv4, tags="[Services]", info = report_content, ports = Host.full_ports, full_ports = Host.full_ports, info_gnmap = Host.line, type=autodetectType(Host.name), metadata = MDATA, owner = MDT['owner'])
+                    Result = vdInServices(name=Host.name, nname=Host.nname, ipv4=Host.ipv4, tag=MDT['tag'], info = report_content, ports = Host.full_ports, full_ports = Host.full_ports, info_gnmap = Host.line, type=autodetectType(Host.name), metadata = MDATA, owner = MDT['owner'])
                 NewData = True
                 
                 try:
@@ -103,7 +103,7 @@ class Command(BaseCommand):
                             MSG['ipv4'] = Host.ipv4
                             delta(MSG)
 
-                    OldData.update(info = report_content, nname=Host.nname, ipv4=Host.ipv4, ports = Host.full_ports, full_ports = Host.full_ports, info_gnmap = Host.line, owner = MDT['owner'], metadata = MDATA)
+                    OldData.update(info = report_content, nname=Host.nname, ipv4=Host.ipv4, ports = Host.full_ports, full_ports = Host.full_ports, info_gnmap = Host.line, owner = MDT['owner'], tag = MDT['tags'], metadata = MDATA)
                     debug("\n\n#########Updating....#################\n")
             debug(line)
             lines +=1

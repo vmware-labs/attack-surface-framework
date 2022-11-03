@@ -7,7 +7,7 @@ import sys
 import os
 import netaddr
 from cProfile import label
-from app.views import autodetectType
+from app.tools import autodetectType
 
 PARSER_DEBUG=False
 def debug(text):

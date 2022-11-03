@@ -1,0 +1,92 @@
+{% extends "layouts/base.html" %}
+
+{% block title %} Target Domain {% endblock %} 
+
+<!-- Specific Page CSS goes HERE  -->
+{% block stylesheets %}{% endblock stylesheets %}
+
+{% block content %}
+{{ target_file }}
+<style>
+.tfp-1 {
+  background-color: white;
+}
+.tfp0 {
+  background-color: gray;
+}
+.tfp1 {
+  background-color: orange;
+}
+</style>
+<b>Nuclei Templates Blacklist:</b>Multiple files allowed as blacklist
+<form class="navbar-form" action="vd-export" method="post" style="display: inline;">
+	{%csrf_token%}
+          <span class="bmd-form-group"><div class="input-group no-border">
+ <input type="hidden" name="model" value="nucleitemplates">
+          <button type="submit" class="btn btn-white btn-round btn-just-icon">
+          <i class="material-icons">system_update_alt</i>
+          <div class="ripple-container"></div>
+          </button>
+          </div></span>
+</form>
+
+ <!-- Main Form to save the whole list -->
+                       <form method="post" action="vd-nuclei-templates" style="display: inline;">
+                       {%csrf_token%}
+                         <input type="hidden" name="name" value="{{ item.name }}">
+                         <input type="hidden" name="vulnerability" value="{{ item.vulnerability }}">
+                         <input type="hidden" name="nuclei_action" value="blacklist">
+<!-- The form will continue at the bottom -->
+
+        <div class="row">
+            <div class="col-md-12">
+              <div class="card">
+                <div class="card-header card-header-primary">
+                  <h4 class="card-title ">Templates List</h4>
+                </div>
+                <div class="card-body">
+                  <div class="table-responsive">
+                    <table class="table">
+                      <thead class="text-primary">
+                        <th>
+                          ID
+                        </th>
+                        <th>
+                          YAML File
+                        </th>
+                        <th style="text-align: center;">
+                          Blacklist?
+                        </th>
+                      </thead>
+                      <tbody>
+ {% for item in query_results %}
+                        <tr>
+                          <td>
+                            {{ item.id }}
+                          </td>
+                          <td>
+                            {{ item.template }}
+                          </td>
+                          <td align="center">
+                            <input type="checkbox" name="{{ item.template }}" {{ item.enabled }}>
+                          </td>                          
+                        </tr>
+
+{% endfor %}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+<!-- Here we end the main blacklist form -->
+		<button type="submit" rel="tooltip" title="" class="btn btn-white btn-round btn-just-icon" data-original-title="Save Selection">
+           	<i class="material-icons">save</i>
+       	</button>
+        </form>
+
+{% endblock content %}
+
+<!-- Specific Page JS goes HERE  -->
+{% block javascripts %}{% endblock javascripts %}

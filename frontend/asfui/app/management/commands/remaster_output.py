@@ -1,8 +1,9 @@
 #!/usr/bin/python3
+#VER:1
 from django.core.management.base import BaseCommand, CommandError
 from django.utils import timezone
 from cProfile import label
-from app.models import vdTarget, vdResult, vdServices, vdInServices, vdRegExp, vdJob  
+from app.models import vdTarget, vdResult, vdServices, vdInServices, vdRegExp, vdJob, vdNucleiResult
 
 from os import path
 import sys
@@ -13,8 +14,8 @@ import argparse
 import csv
 import json
 from urllib.request import localhost
-from app.views import autodetectType, delta, get_metadata
-from app.targets import get_metadata_array
+from app.tools import *
+from app.nuclei import *
 
 #Static and Global Declarations
 HYDRA = re.compile("^(\[.*\])(\[.*\])\s+host:\s+([a-z,0-9,A-Z,\.]*)\s+login:\s+(\S*)\s+password:\s+(.*)$")
@@ -22,6 +23,11 @@ HYDRA = re.compile("^(\[.*\])(\[.*\])\s+host:\s+([a-z,0-9,A-Z,\.]*)\s+login:\s+(
 NUCLEI_HTTP = re.compile("^.*(http.*)$")
 NUCLEI_HTTP_DASH = re.compile("^.*(\:\/\/).*$")
 NUCLEI_NETWORK = re.compile(".*\[network\].*")
+NUCLEI_CRITICAL = re.compile(".*\[critical\].*")
+NUCLEI_HIGH = re.compile(".*\[high\].*")
+NUCLEI_MEDIUM = re.compile(".*\[medium\].*")
+NUCLEI_INFO = re.compile(".*\[info\].*")
+NUCLEI_FINDING = re.compile("^\[[A-Za-z0-9 \-:]*\] \[.*")
 DETECTOR_SOURCE = re.compile("^\[[A-Za-z0-9 ]+\].*")
 
 def parser_default(PARSER_INPUT, PARSER_OUTPUT):
@@ -168,7 +174,10 @@ def parser_nuclei_http(PARSER_INPUT, PARSER_OUTPUT):
                     OldData.update(nuclei_http=OldData[0].nuclei_http+line)
                 else:
                     delta_cache[DOMAIN]=OldData[0].nuclei_http.split("\n")
-                    OldData.update(nuclei_http=line, owner=MDT['owner'], metadata=NEWMETADATA)
+                    OWN="Unknown"
+                    if 'owner' in MDT:
+                        OWN = MDT['owner']
+                    OldData.update(nuclei_http=line, owner=OWN, metadata=NEWMETADATA)
 
                 if line not in delta_cache[DOMAIN]:
                     
@@ -177,7 +186,7 @@ def parser_nuclei_http(PARSER_INPUT, PARSER_OUTPUT):
                     delta(MSG)
             else:
                 #This line is a temporary MOD, please comment for system integrity, all objects should exist
-                Result = PARSER_OUTPUT(name=DOMAIN, nname=DOMAIN, tags="[Services]", type=autodetectType(DOMAIN), nuclei_http=line)
+                Result = PARSER_OUTPUT(name=DOMAIN, nname=DOMAIN, tag="[Services]", type=autodetectType(DOMAIN), nuclei_http=line)
                 Result.save()
                 debug("Error, not found:"+str(DATA)+"\n")
         else:
@@ -231,65 +240,142 @@ def parser_nuclei_network(PARSER_INPUT, PARSER_OUTPUT):
                     delta(MSG)
             else:
                 #This line is a temporary MOD, please comment for system integrity, all objects should exist
-                Result = PARSER_OUTPUT(name=DOMAIN, nname=DOMAIN, tags="[Services]", type=autodetectType(DOMAIN), nuclei_http=line)
+                Result = PARSER_OUTPUT(name=DOMAIN, nname=DOMAIN, tag="[Services]", type=autodetectType(DOMAIN), nuclei_http=line)
                 Result.save()
                 debug("Error, not found:"+str(DATA)+"\n")
         else:
             debug("Found nothing:"+line)
     return
 
-def parser_nse_vsanrce(PARSER_INPUT, PARSER_OUTPUT):
-    #Although you can import them from VIEWS, in this particular case, we need to match all over the string,
-    #and VIEWS uses it for autodetectType with EXACT MATCH, so removing ^ and $ do the trick
-    DETECTOR_IPADDRESS = re.compile("(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})")
-    DETECTOR_DOMAIN = re.compile("(?!\-)(?:[a-zA-Z\d\-]{0,62}[a-zA-Z\d]\.){1,126}(?!\d+)[a-zA-Z\d]{1,63}")
+def master_parser_nuclei(PARSER_INPUT, PARSER_OUTPUT, FILTER):
     clear_cache = []
     delta_cache = {}
+    vulnerability_cache = []
+    scope="E"
+    if PARSER_OUTPUT.__name__=='vdInServices':
+        scope="I"
     for line in PARSER_INPUT:
-        line = line.rstrip()
         debug(line+"\n")
-        DATA = line.split(",")
-        debug(str(DATA)+"\n")
-        #52.58.57.117, VMware vCenter Server 7.0.1 build:16507313,  Vulnerable to CVE-2021-21972, Vulnerable to vSAN RCE
-        if (len(DATA)>=3):
-            DOMAIN = DETECTOR_DOMAIN.findall(DATA[0])
-            if len(DOMAIN)==0:
-                DOMAIN = DETECTOR_IPADDRESS.findall(DATA[0])[0]
+        if NUCLEI_FINDING.match(line):
+            debug("Line contains the FINDING regular expression\n")
+            DATA = NFinding(line,scope)
+            if FILTER is not None:
+                DATA=FILTER(DATA)
+            debug(str(DATA)+"\n")
+            if DATA is not None:
+                if DATA.full_uri is not None:
+                    #NFinding class now does all the job parsing Nuclei findings, even domain or IP address.
+                    UNIQUE_KEY = str(DATA.name)+"|"+str(DATA.vulnerability)
+                    debug("Searching:"+str(UNIQUE_KEY)+"\n")
+                    #The main purpose of the cache, is to set up the finding just once and avoid too many excecution resources.
+                    if DATA.name in clear_cache:
+                        debug("Cache:Already managed\n")
+                        APPEND = True
+                    else:
+                        debug("Cache:Seting up new finding in cache\n")
+                        clear_cache.append(DATA.name)
+                        APPEND = False
+                    #Here we work in the main data information, grouping the findings all together.
+                    OldData = PARSER_OUTPUT.objects.filter(name=DATA.name)
+                    NEWMETADATA=""
+                    MDT={'owner':'Unknown'}
+                    if OldData.count()==1:
+                        MDT,METADATA = get_metadata(DATA.name)
+                        OLDMETADATA=OldData[0].metadata
+                        OLDMDT=get_metadata_array(OLDMETADATA)
+                        NEWMETADATA=json.dumps(OLDMDT.update(MDT))
+                        debug("Found and Updating:"+str(OldData[0].id)+":"+DATA.name+"\n")
+                        if APPEND:
+                            OldData.update(nuclei_http=OldData[0].nuclei_http+line)
+                        else:
+                            delta_cache[DATA.name]=OldData[0].nuclei_http.split("\n")
+                            OldData.update(nuclei_http=line, owner=MDT['owner'], metadata=NEWMETADATA)
+                
+                        if ((DATA.name in delta_cache) and (line not in delta_cache[DATA.name])) or (DATA.name not in delta_cache):
+                            MSG = {'message':"[NUCLEI][New Finding]", 'host':DATA.name, 'finding':line}
+                            MSG.update(MDT)
+                            delta(MSG)
+                    else:
+                        #This line is a temporary MOD, please comment for system integrity, all objects should exist
+                        Result = PARSER_OUTPUT(name=DATA.name, nname=DATA.name, tag="[Services]", type=autodetectType(DATA.name), nuclei_http=line)
+                        Result.save()
+                        debug("Error, not found:"+str(DATA)+"\n")
+                    #In this point we fill the new table for the dashboard
+                    DATA.metadata=NEWMETADATA
+                    DATA.owner=MDT['owner']
+                    if UNIQUE_KEY not in vulnerability_cache:
+                        #Search for the existence of unique VT
+                        VT = vdNucleiResult.objects.filter(name=DATA.name, vulnerability=DATA.vulnerability)
+                        if VT.count()==1:
+                            debug("Found and Updating:"+UNIQUE_KEY+"\n")
+                            update_nuclei_finding(VT,DATA)
+                        else:
+                            debug("Not Found and Creating:"+UNIQUE_KEY+"\n")
+                            create_nuclei_finding(DATA)
             else:
-                DOMAIN = DOMAIN[0]
-            debug("Searching:"+str(DOMAIN)+"\n")
-            OldData = PARSER_OUTPUT.objects.filter(name=DOMAIN)
-            if OldData.count()==1:
-                MDT,METADATA = get_metadata(DOMAIN)
-                debug("Found and Updating:"+str(OldData[0].id)+":"+DOMAIN+"\n")
-                OLDMETADATA=OldData[0].metadata
-                OLDMDT=get_metadata_array(OLDMETADATA)
-                NEWMETADATA=json.dumps(OLDMDT.update(MDT))                
-                OldData.update(nse_vsanrce=line, owner=MDT['owner'], metadata=NEWMETADATA)
-                MSG = {'message':"[NSE][VSANRCE]", 'host':DOMAIN, 'finding':line}
-                counter = 0
-                for field in DATA:
-                    MSG["FIELD"+str(counter)]=field.lstrip().rstrip()
-                    counter+=1
-                MSG.update(MDT)
-                delta(MSG)
-            else:
-                #This line is a temporary MOD, please comment for system integrity, all objects should exist
-                Result = PARSER_OUTPUT(name=DOMAIN, nname=DOMAIN, tags="[Services]", type=autodetectType(DOMAIN), nse_vsanrce=line)
-                Result.save()
-                debug("Error, not found:"+str(DATA)+"\n")
+                pass
         else:
-            debug("Error, nonsense line:"+str(DATA)+"\n")
+            debug("Found nothing:"+line)
     return
 
+def parser_nuclei(PARSER_INPUT, PARSER_OUTPUT):
+    return master_parser_nuclei(PARSER_INPUT, PARSER_OUTPUT, None)
+
+def parser_nuclei_waf(PARSER_INPUT, PARSER_OUTPUT):
+    return master_parser_nuclei(PARSER_INPUT, PARSER_OUTPUT, filter_nuclei_waf)
+
+def filter_nuclei_waf(DATA):
+    if DATA.temp_array[2]=='failed':
+        DATA.level="medium"
+        DATA.vulnerability="MISSING-WAF"
+        return DATA
+    else:
+        return None
+
+
+def parser_nuclei_onlyalert(PARSER_INPUT, PARSER_OUTPUT):
+    #Line example: [2022-09-01 22:19:31] [waf-detect:apachegeneric] [matched] [http] [info] https://ywd-fgkjhfgh.co.kr/
+    #Line example: [2022-09-05 07:17:51] [CVE-2021-40438] [http] [critical] http://3.
+    clear_cache = []
+    delta_cache = {}
+    vulnerability_cache = []
+    scope="E"
+    if PARSER_OUTPUT.__name__=='vdInServices':
+        scope="I"
+    for line in PARSER_INPUT:
+        debug(line+"\n")
+        if NUCLEI_FINDING.match(line):
+            debug("Line contains the FINDING regular expression\n")
+            DATA = NFinding(line,scope)
+            debug(str(DATA)+"\n")
+            if DATA.full_uri is not None:
+                #NFinding class now does all the job parsing Nuclei findings, even domain or IP address.
+                UNIQUE_KEY = str(DATA.name)+"|"+str(DATA.vulnerability)
+                debug("Searching:"+str(UNIQUE_KEY)+"\n")
+                debug("Values:"+str(DATA.temp_array)+"\n")
+                MSG = {'message':"[NUCLEI][New Finding]", 'host':DATA.name, 'finding':line}
+                MSG['datetime']=str(DATA.detectiondate)
+                MSG['url']=DATA.full_uri
+                MSG['waf']=DATA.temp_array[1]
+                MSG['status']=DATA.temp_array[2]
+                MSG['protocol']=DATA.temp_array[3]
+                #Level is always 'info'
+                MSG['level']=DATA.temp_array[4]
+                delta(MSG)
+
+    return
+
+
 #Here is the global declaration of parsers, functions can be duplicated
-action={'default':parser_default, 'patator.ssh':parser_patator_ssh, 'patator.rdp':parser_patator_rdp, 'patator.ftp':parser_patator_ftp, 'patator.telnet':parser_patator_telnet, 'hydra.ftp':parser_hydra_ftp, 'hydra.telnet':parser_hydra_telnet, 'nuclei.http':parser_nuclei_http, 'nuclei.network':parser_nuclei_network, 'nse_vsanrce':parser_nse_vsanrce}
+action={'default':parser_default, 'patator.ssh':parser_patator_ssh, 'patator.rdp':parser_patator_rdp, 'patator.ftp':parser_patator_ftp, 'patator.telnet':parser_patator_telnet, 'hydra.ftp':parser_hydra_ftp, 'hydra.telnet':parser_hydra_telnet, 'nuclei.http':parser_nuclei_http, 'nuclei.network':parser_nuclei_network, 'nuclei':parser_nuclei, 'nuclei.onlyalert':parser_nuclei_onlyalert, 'nuclei.waf':parser_nuclei_waf}
 
 def parseLines(PARSER_INPUT, JobInput, parser):
-    PARSER_OUTPUT = vdServices
     if JobInput == "inservices":
         PARSER_OUTPUT = vdInServices
-
+    if JobInput == "services":
+        PARSER_OUTPUT = vdServices
+#     if JobInput == 'nucleiresult':
+#         PARSER_OUTPUT = vdNucleiResult
     return action[parser](PARSER_INPUT, PARSER_OUTPUT)
 
 PARSER_DEBUG=False
@@ -304,7 +390,7 @@ class Command(BaseCommand):
         #This single module reads the input file and convert it into 
         parser.add_argument('--input', help='The input file, if not provided stdin is used', default='stdin')
         parser.add_argument('--output', help='The output JobID:ID', default='error')
-        parser.add_argument('--parser', help='The parser algorithm [default|patator{.ssh, .ftp, .rdp, .telnet, .smb}]', default='default')
+        parser.add_argument('--parser', help='The parser algorithm [default|nuclei|patator{.ssh, .ftp, .rdp, .telnet, .smb}]', default='default')
         parser.add_argument('--debug', help='Print verbose data', action='store_true', default=False)
         
     def handle(self, *args, **kwargs):        

@@ -15,5 +15,25 @@ pip3 install -r requirements.txt
 python3 manage.py makemigrations
 python3 manage.py migrate
 python3 manage.py createsuperuser
+#Systemd service files installation
+cd /opt/asf/tools/systemd/
+for file in *
+do
+	cp -v "$file" "/etc/systemd/system/$file" 
+done
+apt install -y nginx
+rm -f /etc/nginx/sites-enabled/default /etc/nginx/sites-available/default
+cp -v /opt/asf/tools/nginx/sites-enabled/asf /etc/nginx/sites-enabled/
+ln -s ../sites-enabled/asfopt/asf /etc/nginx/sites-available/asf
+ln -s /opt/asf/tools/scripts/startasf.sh /bin/
+systemctl daemon-reload
+systemctl start asf
+systemctl enable asf
+systemctl start nucleitemplates
+systemctl enable nucleitemplates.timer
+systemctl start nucleitemplates.timer
+systemctl enable cleanuptrash.timer
+systemctl start cleanuptrash.timer
+systemctl restart nginx
 echo "Try server with: \
 python3 manage.py runserver 0.0.0.0:8080"

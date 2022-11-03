@@ -1,0 +1,11 @@
+[Unit]
+Description=Attack Surface Framework External Nmap Service File
+Requires=docker.service
+
+[Timer]
+OnCalendar=Mon,Tue,Wed,Thu,Fri,Sat,Sun 08:30
+Unit=vdexnmap.service
+
+[Install]
+WantedBy=multi-user.target
+

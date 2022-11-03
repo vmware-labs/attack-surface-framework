@@ -4,7 +4,7 @@ from app.models import vdTarget, vdResult, vdServices, vdInServices, vdRegExp, v
 from django.utils import timezone
 import re
 from cProfile import label
-from app.views import autodetectType, delta, debug, PARSER_DEBUG
+from app.tools import autodetectType, delta, debug, PARSER_DEBUG
 from app.nmapmodels import NMAP_PORTS, NMHost, NMService
 import json
 import os

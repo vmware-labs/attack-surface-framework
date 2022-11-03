@@ -330,7 +330,10 @@ Save Your Search:
                         </th>
                         <th style="text-align: center;">
                           Owner
-                        </th>                        
+                        </th>
+                        <th>
+                          Tag
+                        </th>
                         <th style="text-align: center;">
                           Tools
                         </th>
@@ -361,6 +364,9 @@ Save Your Search:
                           <span onclick="row = document.getElementById('metadata-{{ item.id }}'); if (row.style.display=='none') {row.style.display='';}else{row.style.display='none';}" style="display: inline;">
                             {{ item.owner }}
                           </span>
+                          </td>
+                           <td>
+                            {{ item.tag }}
                           </td>                          
                           <td style="text-align: center;">
 							<span onclick="row = document.getElementById('host_{{ item.id }}'); if (row.style.display=='none') {row.style.display='';}else{row.style.display='none';}" style="display: inline;">

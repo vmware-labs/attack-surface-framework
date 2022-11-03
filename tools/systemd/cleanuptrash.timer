@@ -1,0 +1,11 @@
+[Unit]
+Description=Attack Surface Framework Cleanup the Trash folder timer
+Requires=docker.service
+
+[Timer]
+OnCalendar=Mon,Tue,Wed,Thu,Fri,Sat,Sun 23:00
+Unit=cleanuptrash.service
+
+[Install]
+WantedBy=multi-user.target
+

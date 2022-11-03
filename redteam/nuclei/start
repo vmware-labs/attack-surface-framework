@@ -34,8 +34,8 @@ done
 IMAGE_NAME='projectdiscovery/nuclei'
 #IMAGE_NAME='m4ch1n3s/nuclei'
 if ! docker images | grep $IMAGE_NAME
-then echo "Building nuclei..."
-docker build -t m4ch1n3s/nuclei /opt/asf/redteam/nuclei/nuclei-master/
+then echo "Pulling nuclei..."
+docker pull $IMAGE_NAME:latest
 fi
 mkdir -p /home/nuclei-templates
 chmod 777 /home/nuclei-templates
@@ -44,8 +44,8 @@ then
 	docker run -i --rm -v $JOB_OUTPUT_FOLDER/:/mnt -v /home/nuclei-templates:/app/nuclei-templates $IMAGE_NAME  -update-templates 2>&1 > "$JOB_OUTPUT_FOLDER/app.log"
 fi
 #$ARG0-$ARG9
-echo docker run --rm -v $JOB_OUTPUT_FOLDER/:/mnt -v /home/nuclei-templates:/app/nuclei-templates $IMAGE_NAME -no-color $ARG0 -l /mnt/app.input $ARG1 $ARG2  2>&1 \| tee "$JOB_OUTPUT_FOLDER/app.report.txt" \>\> "$JOB_OUTPUT_FOLDER/app.log" \&
-docker run --rm -v $JOB_OUTPUT_FOLDER/:/mnt -v /home/nuclei-templates:/app/nuclei-templates $IMAGE_NAME -no-color $ARG0 -l /mnt/app.input $ARG1 $ARG2  2>&1 | tee "$JOB_OUTPUT_FOLDER/app.report.txt" >> "$JOB_OUTPUT_FOLDER/app.log" &
+echo docker run --rm -v $JOB_OUTPUT_FOLDER/:/mnt -v /home/nuclei-templates:/app/nuclei-templates $IMAGE_NAME -t /app/nuclei-templates/ -no-color $ARG0 -l /mnt/app.input $ARG1 $ARG2  2>&1 \| tee "$JOB_OUTPUT_FOLDER/app.report.txt" \>\> "$JOB_OUTPUT_FOLDER/app.log" \&
+docker run --rm -v $JOB_OUTPUT_FOLDER/:/mnt -v /home/nuclei-templates:/app/nuclei-templates $IMAGE_NAME -t /app/nuclei-templates/ -no-color $ARG0 -l /mnt/app.input $ARG1 $ARG2  2>&1 | tee "$JOB_OUTPUT_FOLDER/app.report.txt" >> "$JOB_OUTPUT_FOLDER/app.log" &
 
 JOB_PID=$!
 echo $JOB_PID>"$JOB_FOLDER/pid"

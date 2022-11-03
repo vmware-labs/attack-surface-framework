@@ -1,6 +1,7 @@
 #!/usr/bin/python3
+#VER:1
 import re
-from app.views import debug, PARSER_DEBUG
+from app.tools import debug, PARSER_DEBUG
 
 PARSER_DEBUG = False
 NMAP_PORTS = re.compile(".*Ports:\s")
@@ -74,14 +75,19 @@ class NMHost:
             Finding = NMAP_TAB.split(self.line)
             debug(Finding)
             Host = NMAP_HOST.match(Finding[0])
-            self.nname = Host.group(2).strip()
-            self.ipv4 = Host.group(1)
+            if Host is not None:
+                self.nname = Host.group(2).strip()
+                self.ipv4 = Host.group(1)
             if self.name is None:
                 if self.nname != "":
                     self.name = self.nname
                 else:
                     self.name = self.ipv4
-            Finding = NMAP_PORTS.split(Finding[1])
+            try:
+                Finding = NMAP_PORTS.split(Finding[1])
+            except Exception as e:
+                debug(str(e)+"\nException, but continue.!!")
+                return
             #Ignored States have another TAB
             Finding = NMAP_TAB.split(Finding[1])
             RPorts = Finding[0].rstrip('\n')
