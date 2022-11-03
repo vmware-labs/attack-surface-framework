@@ -15,6 +15,7 @@ ASF is a breed of open source projects leveraging a powerful arsenal of tools wr
 ### Prerequisites
 
 Latest version of Kali Linux (tested on 64 bits) - https://kali.org/get-kali/
+
 Latest version of Subfinder installed, for instructions see https://github.com/projectdiscovery/subfinder
 
 16 GB of RAM at least
