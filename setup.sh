@@ -29,9 +29,6 @@ ln -s /opt/asf/tools/scripts/startasf.sh /bin/
 systemctl daemon-reload
 systemctl start asf
 systemctl enable asf
-systemctl start nucleitemplates
-systemctl enable nucleitemplates.timer
-systemctl start nucleitemplates.timer
 systemctl enable cleanuptrash.timer
 systemctl start cleanuptrash.timer
 systemctl restart nginx
