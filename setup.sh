@@ -32,5 +32,5 @@ systemctl enable asf
 systemctl enable cleanuptrash.timer
 systemctl start cleanuptrash.timer
 systemctl restart nginx
-echo "Try server with: \
-python3 manage.py runserver 0.0.0.0:8080"
+echo "A.S.F. Running on: \
+http://127.0.0.1:2021"

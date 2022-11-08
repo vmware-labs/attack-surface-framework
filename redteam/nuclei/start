@@ -43,6 +43,8 @@ if ! test -e /home/nuclei-templates/README.md
 then
 	docker run -i --rm -v $JOB_OUTPUT_FOLDER/:/mnt -v /home/nuclei-templates:/app/nuclei-templates $IMAGE_NAME  -update-templates 2>&1 > "$JOB_OUTPUT_FOLDER/app.log"
 fi
+#Reading exclude file
+python3 /opt/asf/frontend/asfui/manage.py nucleialert --mode=blacklist.save --templatesdir /home/nuclei-templates --templatesignorefile /home/nuclei-templates/.nuclei-ignore
 #$ARG0-$ARG9
 echo docker run --rm -v $JOB_OUTPUT_FOLDER/:/mnt -v /home/nuclei-templates:/app/nuclei-templates $IMAGE_NAME -t /app/nuclei-templates/ -no-color $ARG0 -l /mnt/app.input $ARG1 $ARG2  2>&1 \| tee "$JOB_OUTPUT_FOLDER/app.report.txt" \>\> "$JOB_OUTPUT_FOLDER/app.log" \&
 docker run --rm -v $JOB_OUTPUT_FOLDER/:/mnt -v /home/nuclei-templates:/app/nuclei-templates $IMAGE_NAME -t /app/nuclei-templates/ -no-color $ARG0 -l /mnt/app.input $ARG1 $ARG2  2>&1 | tee "$JOB_OUTPUT_FOLDER/app.report.txt" >> "$JOB_OUTPUT_FOLDER/app.log" &

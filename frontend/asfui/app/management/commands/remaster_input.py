@@ -41,7 +41,7 @@ def parser_url(host):
         if not host.services is None:
             for service in host.services:
                 temp = ""
-                if "https" in service.name:
+                if "https" in service.name or ("http" in service.name and "ssl" in service.name):
                     if service.port == "443":
                         temp="https://"+host.name
                     else:
@@ -51,6 +51,8 @@ def parser_url(host):
                     if "http" in service.name or 'http-proxy' in service.name:
                         if service.port == "80":
                             temp="http://"+host.name
+                        elif service.port == "443":
+                            temp="https://"+host.name
                         else:
                             temp="http://"+host.name+":"+service.port
                         URL.append(temp)
