@@ -1,5 +1,27 @@
 #!/bin/bash
 
+# load KUBE_FLAG variable
+. ../../.kube_vars
+if [ $KUBE_FLAG == "TRUE" ]
+then
+    echo "Using Kuberenetes"
+    # Get current context
+    KUBE_CONTEXT=$(cat ~/.kube/config | grep "current-context:" | sed "s/current-context: //")
+
+    if [[ -z "${KUBE_CONTEXT}" ]]
+    then
+        echo "Empty context"
+        KUBE_FLAG=FALSE
+    else
+        # Check if context is correct or not
+        GET_CONTEXT=$(kubectl config current-context)
+        if [ $KUBE_CONTEXT != $GET_CONTEXT ]
+        then
+            KUBE_FLAG=FALSE
+        fi
+    fi
+fi
+
 if test "f$1" "=" "f"
 then 
     echo "Error, please specify a JobID"
@@ -28,9 +50,60 @@ python3 manage.py remaster_input --input JobID:$1 --parser url --output "$JOB_FO
 mkdir -p $JOB_OUTPUT_FOLDER
 for mode in input asf
 do cp -v "$JOB_FOLDER/app.$mode" "$JOB_OUTPUT_FOLDER/app.$mode"
-done 
-echo docker run --rm -v $JOB_OUTPUT_FOLDER/:/tmp/EyeWitness/ m4ch1n3s/eyewitness --web --timeout 120 -f /tmp/EyeWitness/app.input --results 300 --no-prompt 2>&1 \> "$JOB_OUTPUT_FOLDER/app.log"
-docker run --rm -v $JOB_OUTPUT_FOLDER/:/tmp/EyeWitness/ m4ch1n3s/eyewitness --web --timeout 120 -f /tmp/EyeWitness/app.input --results 300 --no-prompt 2>&1 > "$JOB_OUTPUT_FOLDER/app.log" &
+done
+
+if [ $KUBE_FLAG == "TRUE" ]
+then
+    # TODO: get namespace as input from user input
+    NAMESPACE="spe-asf-dev"
+
+    # Apply deployment yaml to k8s cluster
+    # kubectl apply -f eyewitness-asf-dev.yaml
+    cat <<EOF | kubectl apply -f -
+    apiVersion: v1
+    kind: Pod
+    metadata:
+      name: eyewitnes-$DATE_STAMP
+    spec:
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 3000
+        fsGroup: 2000
+      volumes:
+      - name: tmp-vol
+        emptyDir: {}
+      - name: eyewitness-vol
+        emptyDir: {}
+      containers:
+        - name: eyewitness
+          image: m4ch1n3s/eyewitness
+          volumeMounts:
+            - name: tmp-vol
+              mountPath: /tmp/EyeWitness
+          resources:
+            requests:
+              memory: "1024Mi"
+            limits:
+              memory: "2048Mi"
+          command: ["/bin/sh"]
+          args: ["-c", "while true; do sleep 10;done"]
+          securityContext:
+            allowPrivilegeEscalation: false
+    EOF
+
+    # copy the app.input file to k8s tmp folder
+    kubectl cp $JOB_FOLDER/app.input $NAMESPACE/eyewitness:/tmp/EyeWitness
+
+    # run the Eyewitness command
+    kubectl exec --stdin --tty eyewitness -- Python/EyeWitness.py --web -f /tmp/EyeWitness/app.input --timeout 120 --results 300 -d /tmp/EyeWitness/$DATE_STAMP --no-prompt 2>&1 > app.log
+
+    # copy the output back to jobs folder in ASF
+    kubectl cp spe-asf-dev/eyewitness:$DATE_STAMP $JOB_OUTPUT_FOLDER
+else
+    echo docker run --rm -v $JOB_OUTPUT_FOLDER/:/tmp/EyeWitness/ m4ch1n3s/eyewitness --web --timeout 120 -f /tmp/EyeWitness/app.input --results 300 --no-prompt 2>&1 \> "$JOB_OUTPUT_FOLDER/app.log"
+    docker run --rm -v $JOB_OUTPUT_FOLDER/:/tmp/EyeWitness/ m4ch1n3s/eyewitness --web --timeout 120 -f /tmp/EyeWitness/app.input --results 300 --no-prompt 2>&1 > "$JOB_OUTPUT_FOLDER/app.log" &
+fi
+
 JOB_PID=$!
 echo $JOB_PID>"$JOB_FOLDER/pid"
 /opt/asf/redteam/eyewitness/extract_pics_mon.sh "$JOB_OUTPUT_FOLDER" "$JOB_FOLDER/pid" & 
