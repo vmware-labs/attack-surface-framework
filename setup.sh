@@ -15,6 +15,31 @@ pip3 install -r requirements.txt
 python3 manage.py makemigrations
 python3 manage.py migrate
 python3 manage.py createsuperuser
+
+# Kubernetes config setup
+KUBE_VARS_FILE=.kube_vars
+
+if [ -f "$KUBE_VARS_FILE" ]
+then
+	# Load varibale KUBE_FLAG from kube_vars
+    . $KUBE_VARS_FILE
+else
+	# set default as false
+	KUBE_FLAG=FALSE
+	echo 'KUBE_FLAG=FALSE' > $KUBE_VARS_FILE
+fi
+
+echo "Would you like to use kubernetes cluster (y/n)?"
+read kube_enable
+
+if [ $kube_enable == "y" ]
+then
+	sed -i "s/KUBE_FLAG=$KUBE_FLAG/KUBE_FLAG=TRUE/g" $KUBE_VARS_FILE
+elif [ $kube_enable == "n" ]
+then
+	sed -i "s/KUBE_FLAG=$KUBE_FLAG/KUBE_FLAG=FALSE/g" $KUBE_VARS_FILE
+fi
+
 #Systemd service files installation
 cd /opt/asf/tools/systemd/
 for file in *
