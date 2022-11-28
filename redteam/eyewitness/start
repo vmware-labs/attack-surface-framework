@@ -1,14 +1,16 @@
 #!/bin/bash
 
 # load KUBE_FLAG variable
-. ../../.kube_vars
-if [ $KUBE_FLAG == "TRUE" ]
+KUBE_VARS_FILE=../../.kube_vars
+. $KUBE_VARS_FILE
+
+if [ $KUBE_FLAG = "TRUE" ]
 then
     echo "Using Kuberenetes"
     # Get current context
     KUBE_CONTEXT=$(cat ~/.kube/config | grep "current-context:" | sed "s/current-context: //")
 
-    if [[ -z "${KUBE_CONTEXT}" ]]
+    if [ -z ${KUBE_CONTEXT} ]
     then
         echo "Empty context"
         KUBE_FLAG=FALSE
@@ -52,7 +54,7 @@ for mode in input asf
 do cp -v "$JOB_FOLDER/app.$mode" "$JOB_OUTPUT_FOLDER/app.$mode"
 done
 
-if [ $KUBE_FLAG == "TRUE" ]
+if [ $KUBE_FLAG = "TRUE" ]
 then
     # TODO: get namespace as input from user input
     NAMESPACE="spe-asf-dev"
@@ -63,7 +65,7 @@ then
     apiVersion: v1
     kind: Pod
     metadata:
-      name: eyewitnes-$DATE_STAMP
+      name: eyewitness-$DATE_STAMP
     spec:
       securityContext:
         runAsUser: 1000
@@ -89,7 +91,7 @@ then
           args: ["-c", "while true; do sleep 10;done"]
           securityContext:
             allowPrivilegeEscalation: false
-    EOF
+EOF
 
     # copy the app.input file to k8s tmp folder
     kubectl cp $JOB_FOLDER/app.input $NAMESPACE/eyewitness:/tmp/EyeWitness
