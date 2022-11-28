@@ -1,7 +1,7 @@
 #!/bin/bash
 # Needs to be run in kali linux - not tested on others
 # Install Graylog
-apt update && apt install -y imagemagick python3-venv psmisc psutils nmap curl wget tcpdump docker.io docker-compose python3-pip
+apt update && apt install -y imagemagick python3-venv psmisc psutils nmap curl wget tcpdump docker.io docker-compose python3-pip ca-certificates apt-transport-https
 git clone https://github.com/projectdiscovery/nuclei-templates.git /home/nuclei-templates
 cp -R /opt/asf/tools/graylog /
 cd /graylog 
@@ -17,12 +17,12 @@ python3 manage.py migrate
 python3 manage.py createsuperuser
 
 # Kubernetes config setup
-KUBE_VARS_FILE=.kube_vars
+KUBE_VARS_FILE=/.kube_vars
 
 if [ -f "$KUBE_VARS_FILE" ]
 then
 	# Load varibale KUBE_FLAG from kube_vars
-    . $KUBE_VARS_FILE
+    	. $KUBE_VARS_FILE
 else
 	# set default as false
 	KUBE_FLAG=FALSE
@@ -32,10 +32,14 @@ fi
 echo "Would you like to use kubernetes cluster (y/n)?"
 read kube_enable
 
-if [ $kube_enable == "y" ]
+if [ $kube_enable = "y" ]
 then
+	curl -fsSLo /usr/share/keyrings/kubernetes-archive-keyring.gpg https://packages.cloud.google.com/apt/doc/apt-key.gpg
+	echo "deb [signed-by=/usr/share/keyrings/kubernetes-archive-keyring.gpg] https://apt.kubernetes.io/ kubernetes-xenial main" | sudo tee /etc/apt/sources.list.d/kubernetes.list
+	apt-get update
+	apt-get install -y kubectl
 	sed -i "s/KUBE_FLAG=$KUBE_FLAG/KUBE_FLAG=TRUE/g" $KUBE_VARS_FILE
-elif [ $kube_enable == "n" ]
+elif [ $kube_enable = "n" ]
 then
 	sed -i "s/KUBE_FLAG=$KUBE_FLAG/KUBE_FLAG=FALSE/g" $KUBE_VARS_FILE
 fi
