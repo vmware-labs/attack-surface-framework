@@ -1,22 +1,33 @@
 #!/bin/bash
 
-# load KUBE_FLAG variable
-KUBE_VARS_FILE=../../.kube_vars
+#  load KUBE_FLAG variable
+KUBE_VARS_FILE=/opt/asf/.kube_vars
 . $KUBE_VARS_FILE
+
+
+# echo "Kuberenete FLAG : $KUBE_FLAG" >> /var/log/eyewitness.log
 
 if [ $KUBE_FLAG = "TRUE" ]
 then
-    echo "Using Kuberenetes"
+    echo "Using Kuberenetes" >> /var/log/eyewitness.log
     # Get current context
     KUBE_CONTEXT=$(cat ~/.kube/config | grep "current-context:" | sed "s/current-context: //")
-
+   
+    echo "Kuberenetes context:  $KUBE_CONTEXT" >> /var/log/eyewitness.log
     if [ -z ${KUBE_CONTEXT} ]
     then
         echo "Empty context"
         KUBE_FLAG=FALSE
     else
-        # Check if context is correct or not
-        GET_CONTEXT=$(kubectl config current-context)
+	export KUBECONFIG=/root/.kube/config
+
+	USE_CONTEXT=$(kubectl config use-context $KUBE_CONTEXT 2>&1)
+#	echo "Kuberenetes use context :  $USE_CONTEXT" >> /var/log/eyewitness.log
+
+	# Check if context is correct or not
+	GET_CONTEXT=$(kubectl config current-context 2>&1)
+#	echo "Kuberenetes get context now :  $GET_CONTEXT" >> /var/log/eyewitness.log
+
         if [ $KUBE_CONTEXT != $GET_CONTEXT ]
         then
             KUBE_FLAG=FALSE
@@ -58,50 +69,62 @@ if [ $KUBE_FLAG = "TRUE" ]
 then
     # TODO: get namespace as input from user input
     NAMESPACE="spe-asf-dev"
-
+    echo "Executing kubectl" >> /var/log/eyewitness.log
     # Apply deployment yaml to k8s cluster
-    # kubectl apply -f eyewitness-asf-dev.yaml
     cat <<EOF | kubectl apply -f -
-    apiVersion: v1
-    kind: Pod
-    metadata:
-      name: eyewitness-$DATE_STAMP
-    spec:
+apiVersion: v1
+kind: Pod
+metadata:
+  name: eyewitness-$DATE_STAMP
+spec:
+  securityContext:
+    runAsUser: 1000
+    runAsGroup: 3000
+    fsGroup: 2000
+  volumes:
+  - name: tmp-vol
+    emptyDir: {}
+  - name: eyewitness-vol
+    emptyDir: {}
+  - name: eye-py-vol
+    emptyDir: {}
+  containers:
+    - name: eyewitness
+      image: m4ch1n3s/eyewitness
+      volumeMounts:
+        - name: tmp-vol
+          mountPath: /tmp/EyeWitness
+        - name: eye-py-vol
+          mountPath: EyeWitness/Python
+      resources:
+        requests:
+          memory: "1024Mi"
+        limits:
+          memory: "2048Mi"
+      command: ["/bin/sh"]
+      args: ["-c", "while true; do sleep 10;done"]
       securityContext:
-        runAsUser: 1000
-        runAsGroup: 3000
-        fsGroup: 2000
-      volumes:
-      - name: tmp-vol
-        emptyDir: {}
-      - name: eyewitness-vol
-        emptyDir: {}
-      containers:
-        - name: eyewitness
-          image: m4ch1n3s/eyewitness
-          volumeMounts:
-            - name: tmp-vol
-              mountPath: /tmp/EyeWitness
-          resources:
-            requests:
-              memory: "1024Mi"
-            limits:
-              memory: "2048Mi"
-          command: ["/bin/sh"]
-          args: ["-c", "while true; do sleep 10;done"]
-          securityContext:
-            allowPrivilegeEscalation: false
+        allowPrivilegeEscalation: false
 EOF
-
+    
+    kubectl wait --for=condition=Ready pod/eyewitness-$DATE_STAMP
+    echo "kubectl wait --for=condition=Ready pod/eyewitness-$DATE_STAMP"
+    #echo "kubectl apply is success" >> /var/log/eyewitness.log
     # copy the app.input file to k8s tmp folder
-    kubectl cp $JOB_FOLDER/app.input $NAMESPACE/eyewitness:/tmp/EyeWitness
-
+    kubectl cp $JOB_FOLDER/app.input $NAMESPACE/eyewitness-$DATE_STAMP:/tmp
+    
+    #echo "kubectl copy is done" >> /var/log/eyewitness.log
     # run the Eyewitness command
-    kubectl exec --stdin --tty eyewitness -- Python/EyeWitness.py --web -f /tmp/EyeWitness/app.input --timeout 120 --results 300 -d /tmp/EyeWitness/$DATE_STAMP --no-prompt 2>&1 > app.log
+    kubectl exec --stdin --tty eyewitness-$DATE_STAMP -- Python/EyeWitness.py --web -f /tmp/app.input --timeout 123 --results 300 -d /tmp/$DATE_STAMP --selenium-log-path /tmp/.geckodriver.log --no-prompt 2>&1 > app.log
+    #echo "kubectl exec is completed" >> /var/log/eyewitness.log
 
     # copy the output back to jobs folder in ASF
-    kubectl cp spe-asf-dev/eyewitness:$DATE_STAMP $JOB_OUTPUT_FOLDER
+    kubectl cp $NAMESPACE/eyewitness-$DATE_STAMP:/tmp/$DATE_STAMP $JOB_OUTPUT_FOLDER
+
+    # delete the pod
+    kubectl delete pod eyewitness-$DATE_STAMP
 else
+    #echo "executing docker" >> /var/log/eyewitness.log
     echo docker run --rm -v $JOB_OUTPUT_FOLDER/:/tmp/EyeWitness/ m4ch1n3s/eyewitness --web --timeout 120 -f /tmp/EyeWitness/app.input --results 300 --no-prompt 2>&1 \> "$JOB_OUTPUT_FOLDER/app.log"
     docker run --rm -v $JOB_OUTPUT_FOLDER/:/tmp/EyeWitness/ m4ch1n3s/eyewitness --web --timeout 120 -f /tmp/EyeWitness/app.input --results 300 --no-prompt 2>&1 > "$JOB_OUTPUT_FOLDER/app.log" &
 fi
