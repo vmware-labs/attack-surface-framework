@@ -9,17 +9,17 @@ KUBE_VARS_FILE=/opt/asf/.kube_vars
 
 if [ $KUBE_FLAG = "TRUE" ]
 then
-    echo "Using Kuberenetes" >> /var/log/eyewitness.log
+    #echo "Using Kuberenetes" >> /var/log/eyewitness.log
     # Get current context
     KUBE_CONTEXT=$(cat ~/.kube/config | grep "current-context:" | sed "s/current-context: //")
    
-    echo "Kuberenetes context:  $KUBE_CONTEXT" >> /var/log/eyewitness.log
+    #echo "Kuberenetes context:  $KUBE_CONTEXT" >> /var/log/eyewitness.log
     if [ -z ${KUBE_CONTEXT} ]
     then
         echo "Empty context"
         KUBE_FLAG=FALSE
     else
-	export KUBECONFIG=/root/.kube/config
+	export KUBECONFIG=$KUBE_CONFIG
 
 	USE_CONTEXT=$(kubectl config use-context $KUBE_CONTEXT 2>&1)
 #	echo "Kuberenetes use context :  $USE_CONTEXT" >> /var/log/eyewitness.log
@@ -68,8 +68,7 @@ done
 if [ $KUBE_FLAG = "TRUE" ]
 then
     # TODO: get namespace as input from user input
-    NAMESPACE="spe-asf-dev"
-    echo "Executing kubectl" >> /var/log/eyewitness.log
+    #echo "Executing kubectl" >> /var/log/eyewitness.log
     # Apply deployment yaml to k8s cluster
     cat <<EOF | kubectl apply -f -
 apiVersion: v1
