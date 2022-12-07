@@ -1,0 +1,3 @@
+KUBE_FLAG=FALSE
+NAMESPACE="default"
+KUBE_CONFIG=/root/.kube/config
