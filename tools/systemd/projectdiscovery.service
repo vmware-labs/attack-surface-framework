@@ -1,0 +1,7 @@
+[Unit]
+Description=Update Nuclei Templates
+Requires=docker.service
+
+[Service]
+ExecStart=/opt/asf/redteam/nuclei/update_templates.sh
+#ExecStart=/root/go/bin/cent -p /home/nuclei-templates/ -k

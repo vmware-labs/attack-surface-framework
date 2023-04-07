@@ -74,7 +74,8 @@ class sdService():
         self.config['Minute'] = Minute
         self.config['Repeat'] = Repeat
         self.config['Days'] = ADays
-        self.config['Timer']['OnCalendar'] = Days+" "+Hour+":"+Minute+OnCalendarRepeat
+        #self.config['Timer']['OnCalendar'] = Days+" "+Hour+":"+Minute+OnCalendarRepeat
+        self.config['Timer']['OnCalendar'] = Days+" *-*-* "+Hour+":"+Minute
 
     def write(self):
         global MainDictionaries

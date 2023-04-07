@@ -153,9 +153,90 @@ def parser_subfinder_output(kwargs):
         lines +=1
     debug("Done printing "+str(lines)+" lines..\n")
     return
+
+def parser_socialsearch_output(kwargs):
+    report=sys.stdin
+    lines=0    
+    if kwargs['input']!='stdin':
+        report=open(kwargs['input'],'r')
+    Finding = json.loads(report.read())
+    Tag = ""
+    if "meta" in Finding:
+        debug(str(Finding['meta']))
+    else:
+        debug("Error in JSON, not meta key, ABORTING\n")
+        return
+    if "posts" in Finding:
+        debug("\nFound ["+str(len(Finding['posts']))+"] results\n")
+    else:
+        debug("Error in JSON, not posts key, ABORTING\n")
+        return
+    for POST in Finding['posts']:
+        MSG=Finding['meta']
+        MSG.update(POST)
+        MSG['message']="[SOCIALSEARCH][FOUND]"
+        debug("Finding and Called Delta:"+str(MSG)+"\n\n")
+        delta(MSG)
+    return
+
+def parser_pwndb_output(kwargs):
+    #https://haveibeenpwned.com/api/v3/breach/Adobe
+    report=sys.stdin
+    lines=0    
+    if kwargs['input']!='stdin':
+        report=open(kwargs['input'],'r')
+    Finding = json.loads(report.read())
+    Tag = ""
+    if "Name" in Finding[0]:
+        debug(str(Finding[0]['Name']))
+    else:
+        debug("Error in JSON, not Name key, ABORTING\n"+str(Finding)+"\n")
+        return
+    MSG={}
+    MSG.update(Finding[0])
+    MSG['message']="[PWNDB][FOUND]"
+    debug("Finding and Called Delta:"+str(MSG)+"\n\n")
+    delta(MSG)
+    return
+
+
+def parser_list_domains(kwargs):
+    if kwargs['input'] != "stdin":
+        if "JobID:" in kwargs['input']:
+            JobID = kwargs['input'].split("JobID:")[1]
+            debug("Requested to extract data from database backend for JobID:"+JobID+"\n")
+            FileTargets=sys.stdout
+            if kwargs['output']!='stdout':
+                    FileTargets=open(kwargs['output'],'w+')
+            JOB_FOLDER = "/home/asf/jobs/"+JobID+"/"
+            JOB_FILENAME = JOB_FOLDER+"app.asf"
+            try:
+                Job = vdJob.objects.filter(id = JobID)[0]
+                HostsFromModel = search(Job.regexp, Job.input, Job.exclude)
+                if not path.exists(JOB_FOLDER):
+                    os.makedirs(JOB_FOLDER)
+                INPUT_FILE = FileTargets
+                HOSTS_COUNTER=0
+                if Job.input == 'discovery':
+                    for Host in HostsFromModel:
+                        INPUT_FILE.write(Host.name+"\n")
+                        HOSTS_COUNTER = HOSTS_COUNTER + 1
+                else:
+                    for HostWithServices in HostsFromModel:
+                        INPUT_FILE.write(HostWithServices.name+"\n")
+                        HOSTS_COUNTER = HOSTS_COUNTER + 1 
+                debug("All hosts data ("+str(HOSTS_COUNTER)+") Written on "+kwargs['output']+"\n")
+                INPUT_FILE.close()
+            except Exception as e:
+                debug("Error creating the input for JobID:"+str(JobID)+"\n")
+                debug(str(e)+"\n")
+                sys.exit()
+    return
+
+
         
 #Here is the global declaration of parsers, functions can be duplicated
-action={'default':parser_default, 'nuclei.waf.rc':parser_nuclei_waf_rc, 'subfinder.input':parser_subfinder_input, 'subfinder.output':parser_subfinder_output, 'wpscan.output':parser_wpscan_output}
+action={'default':parser_default, 'nuclei.waf.rc':parser_nuclei_waf_rc, 'subfinder.input':parser_subfinder_input, 'subfinder.output':parser_subfinder_output, 'wpscan.output':parser_wpscan_output, 'socialsearch.output':parser_socialsearch_output, 'pwndb.output':parser_pwndb_output, 'list.domains':parser_list_domains,}
 
 def getJobID(kwargs):
     if "JobID:" in kwargs['output']:

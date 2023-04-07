@@ -14,7 +14,7 @@ import os
 import re
 from app.models import vdNucleiResult
 
-NUCLEI_SEPARATOR = re.compile("[\[\]\n ]{2,}")
+# NUCLEI_SEPARATOR = re.compile("[\[\]\n ]{2,}")
 NUCLEI_IP_PORT = re.compile("\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\:\d+")
 NUCLEI_IP = re.compile("(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})")
 NUCLEI_PORT = re.compile("\:(\d+)")
@@ -23,14 +23,11 @@ NUCLEI_DOMAIN_PORT = re.compile("(?!\-)(?:[a-zA-Z\d\-]{0,62}[a-zA-Z\d]\.){1,126}
 NUCLEI_DOMAIN = re.compile("(?!\-)(?:[a-zA-Z\d\-]{0,62}[a-zA-Z\d]\.){1,126}(?!\d+)[a-zA-Z\d]{1,63}")
 NUCLEI_TEMPLATE_EXTENSIONS_PATTERNS = ['**/*.[yY][aA][mM][lL]']
 NUCLEI_BLACKLIST_FILE = "/etc/vdnuclei.bl"
-#DEFAULT VALUES, can be tweaked if required
-NUCLEI_DEFAULT_SCOPE='E'
-NUCLEI_DEFAULT_LEVEL='medium'
 
 NUCLEI_PTIME = {
-                'S':{'P0E':72, 'P1I':336, 'P1E':336, 'P2I':720, 'P2E': 720, 'P3I': 1440, 'P4E':2160, 'P4I':2160},
-                'I':{'critical':'P1I', 'high':'P2I', 'medium':'P3I', 'low':'P4I'},
-                'E':{'critical':'P0E', 'high':'P1E', 'medium':'P2E', 'low':'P4E'}
+                'S':{'P0E':72, 'P1I':336, 'P1E':336, 'P2I':720, 'P2E': 720, 'P3I': 1440, 'P4E':2160, 'P4I':2160, 'P5I':24*30, 'P5E':24*30},
+                'I':{'critical':'P1I', 'high':'P2I', 'medium':'P3I', 'low':'P4I', 'info':'P5I'},
+                'E':{'critical':'P0E', 'high':'P1E', 'medium':'P2E', 'low':'P4E', 'info':'P5E'}
                 }
 class NFinding:
     def __init__(self, line=None, scope='E'):
@@ -48,7 +45,8 @@ class NFinding:
         self.detectiondate = None
         self.vulnerability = None
         self.engine = None
-        self.level = None
+        #self.level = None
+        self.level = 'info'
         self.scope = scope
         self.ptime = None
         self.uri = None
@@ -61,37 +59,47 @@ class NFinding:
         self.line = line
         self.owner = None
         self.metadata = None
-        self.temp_array = None
-        if (self.line is not None):
-            self.temp_array = NUCLEI_SEPARATOR.split(self.line)
-            #debug("Nuclei Array size:"+str(len(self.temp_array))+"\n")
-            if len(self.temp_array) >= 5:
-                self.detectiondate = self.temp_array[0][1:]
-                debug("DateOnFile:"+self.temp_array[0]+":")
-                self.detectiondate = datetime.strptime(self.detectiondate, "%Y-%m-%d %H:%M:%S")
-                self.temp_array[0]=self.detectiondate
+        self.parsedline = None
+        temp_array = {}
+        if (self.line is not None and self.line.startswith("{")):
+            try:
+                temp_array = json.loads(self.line)
+                self.parsedline = temp_array
+            except Exception as e:
+                debug("Discovery error in data:"+str(self.line)+"\n")
+                return
+            #{"template-id":"Application-dos","info":{"name":"Application_level_dos","author":["mr.iambatman"],"tags":null,"description":"application_dos","reference":null,"severity":"critical"},"type":"http","host":"http://a01.klt.rip","matched-at":"http://a01.klt.rip/","meta":{"header":"X-XSRF-TOKEN"},"ip":"35.235.88.151","timestamp":"2022-11-11T17:45:16.270214245Z","curl-command":"curl -X 'GET' -d '' -H 'Host: a01.klt.rip' -H 'User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:78.0) Gecko/20100101 Firefox/78.0' -H 'X-XSRF-TOKEN: ab72a99f16a2ff1249c98ccbd2916fa8' 'http://a01.klt.rip/'","matcher-status":true,"matched-line":null}
+            if len(temp_array) >= 5:
+                #"timestamp":"2022-11-11T17:45:16.270214245Z"
+                debug("Converting timestamp:"+temp_array['timestamp']+"\n")
+                self.detectiondate = datetime.strptime(temp_array['timestamp'][0:24], "%Y-%m-%dT%H:%M:%S.%f")
                 debug("DateAsObject:"+str(self.detectiondate)+"\n")
-                self.vulnerability = self.temp_array[1]
-                self.engine = self.temp_array[2]
-                #self.level = self.temp_array[3].lower()
-                self.level = self.temp_array[-2].lower()
-                #self.full_uri = self.temp_array[4]
-                self.full_uri = self.temp_array[-1]
+                self.vulnerability = temp_array['template-id']
+                self.engine = temp_array['type']
+                self.level = temp_array['info']['severity'].lower()
+                if self.level not in NUCLEI_PTIME[self.scope]:
+                    self.level = 'info'
+                if 'matched-at' in temp_array:
+                    self.full_uri = temp_array['matched-at']
+                else:
+                    self.full_uri = temp_array['host']
                 self.uri = self.full_uri
                 if len(self.full_uri) > vdNucleiResult._meta.get_field('uri').max_length:
                     self.uriistruncated = 1
-                if len(self.temp_array) >= 6:
-                    self.info = self.temp_array[5]
-                else:
-                    self.info = ""
+                self.info = temp_array['info']
                 self.setPortandName()
-                debug("Port detection debug:"+self.name+":"+str(self.port)+"\n")
+                if 'ip' in temp_array:
+                    if ":" in temp_array['ip']:
+                        self.ipv6=temp_array['ip']
+                    else:
+                        self.ipv4=temp_array['ip']
+                debug("Port detection debug:"+str(self.name)+":"+str(self.port)+"\n")
                 self.type=autodetectType(self.name)
                 self.ptime,hours=nuclei_ptime(self.level, self.scope)
                 self.bumpdate=self.detectiondate+timedelta(hours=hours)
                 debug("Delta date:"+str(self.bumpdate)+":"+self.ptime+":"+self.level+":"+str(self.detectiondate)+"\n")
             else:
-                debug("Error parsing finding in Nuclei Format, received:"+str(len(self.temp_array))+"/6 for line: "+str(line)+"\n")
+                debug("Error parsing finding in Nuclei Format, received:"+str(len(temp_array))+"/6 for line: "+str(line)+"\n")
         else:
             debug("Error parsing Line in Nuclei Format, received:"+str(line)+":Broken or empty\n")
             
@@ -138,7 +146,20 @@ class NFinding:
         self.nname=self.name
                 
     def getList(self):
-        return {'port':self.port, 'state':self.state, 'protocol':self.protocol, 'owner':self.owner, 'name':self.name, 'info':self.rpc_info, 'version':self.version}
+        FINAL = {}
+        BASIC = {'port':self.port, 'severity':self.level, 'protocol':self.protocol, 'owner':self.owner, 'name':self.name, 'ipv4':self.ipv4, 'ipv6':self.ipv6}
+        for field in self.parsedline:
+            debug("Field:"+field+"["+str(type(self.parsedline[field]))+"]\n")
+            if type(self.parsedline[field]) is dict:
+                debug("Found a dict:"+field+"\n")
+                for subfield in self.parsedline[field]:
+                    debug("Constructing subfield:"+subfield+"\n")
+                    FINAL[field+"_"+subfield]=self.parsedline[field][subfield]
+            else:
+                FINAL[field]=self.parsedline[field]
+        FINAL.update(BASIC)
+        debug("\n\nFinal Array for Merge: "+str(FINAL)+"\n\n")
+        return FINAL
     
     def match(self, Other):
         if Other.port != self.port:
@@ -151,7 +172,7 @@ class NFinding:
             return False
         if Other.name != self.name:
             return False
-        if Other.rpc_info != self.rpc_info:
+        if Other.info != self.info:
             return False
         if Other.version != self.version:
             return False
@@ -284,13 +305,13 @@ def nuclei_filter(POST,subset):
 
 def nuclei_ptime(level,scope):
     if scope not in ['E','I']:
-        scope=NUCLEI_DEFAULT_SCOPE
+        return 'P1E', NUCLEI_PTIME['S']['P1E']
     if level not in ['critical', 'high', 'medium', 'low']:
-        level=NUCLEI_DEFAULT_LEVEL
+        return 'P1E', NUCLEI_PTIME['S']['P1E']
     return NUCLEI_PTIME[scope][level], NUCLEI_PTIME['S'][NUCLEI_PTIME[scope][level]]
 
 def get_nuclei_ptime_selector(context):
-    SELECTOR="<select name='nuclei_ptime'>\n"
+    SELECTOR="<select name='nuclei_ptime' class='form-control'>\n"
     DEFAULT='P0E'
     if 'nuclei_ptime' in context:
         if  context['nuclei_ptime'] in NUCLEI_PTIME['S']:

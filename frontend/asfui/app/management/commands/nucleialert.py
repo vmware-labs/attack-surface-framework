@@ -84,10 +84,29 @@ def nuclei_blacklist_save(context={}):
     for template in TEMPLATES:
         IGNORE+='  - '+template+'\n'
     BLF.write(IGNORE)
+    BLF.close()
+    return
+
+def nuclei_config_save(context={}):
+    debug("Calling nuclei templates blacklist save in configuration\n")
+    TEMPLATES=get_nuclei_templates_4bl()
+    debug(str(TEMPLATES))
+    BLF=open(context['configoutput'],'w+')
+    NTMPLT=open(context['configtemplate'],'r')
+    IGNORE=NTMPLT.read()
+    NTMPLT.close()
+    EXCLUDE_HEADER=False
+    for template in TEMPLATES:
+        if not EXCLUDE_HEADER:
+            EXCLUDE_HEADER=True
+            IGNORE+='\nexclude-templates: # Template based exclusion\n'
+        IGNORE+='  - '+template+'\n'
+    BLF.write(IGNORE)
+    BLF.close()
     return
 
 #Here is the global declaration of parsers, functions can be duplicated
-action={'default':alert_duedate, 'alert.duedate':alert_duedate, 'clean':nuclei_clean, 'purge':nuclei_purge, 'templates':nuclei_templates, 'blacklist':nuclei_blacklist, 'blacklist.save':nuclei_blacklist_save}
+action={'default':alert_duedate, 'alert.duedate':alert_duedate, 'clean':nuclei_clean, 'purge':nuclei_purge, 'templates':nuclei_templates, 'blacklist':nuclei_blacklist, 'blacklist.save':nuclei_blacklist_save, 'config.save':nuclei_config_save}
 
 class Command(BaseCommand):
     help = 'Processes Worker Scans'
@@ -95,9 +114,11 @@ class Command(BaseCommand):
         #This single module reads the input file and convert it into 
         #parser.add_argument('--input', help='The input file, if not provided stdin is used', default='stdin')
         #parser.add_argument('--output', help='The output JobID:ID', default='error')
-        parser.add_argument('--mode', help='The algorithm [default(alert.duedate)|clean, purge, templates, blacklist] for reviewing the findings and alert for not attended', default='default')
+        parser.add_argument('--mode', help='The algorithm [default(alert.duedate)|clean, purge, templates, blacklist[.save]], config.save for reviewing the findings and alert for not attended', default='default')
         parser.add_argument('--templatesdir', help='The template directory, default /home/nuclei-templates', default="/home/nuclei-templates")
         parser.add_argument('--templatesignorefile', help='The template directory, default /home/nuclei-templates/.nuclei-ignore', default="/home/nuclei-templates/.nuclei-ignore")
+        parser.add_argument('--configtemplate', help='The template for default configuration, default /opt/asf/redteam/nuclei/config.yaml', default="/opt/asf/redteam/nuclei/config.yaml")
+        parser.add_argument('--configoutput', help='The file to store with the exclusions, default /home/asf/nuclei-config.yaml', default="/home/asf/nuclei-config.yaml")
         parser.add_argument('--debug', help='Print verbose data', action='store_true', default=False)
         
     def handle(self, *args, **kwargs):        
