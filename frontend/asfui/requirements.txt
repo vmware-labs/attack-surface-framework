@@ -1,6 +1,6 @@
 asgiref
 autopep8
-django
+django==3.2.7
 pycodestyle
 pytz
 sqlparse
@@ -14,3 +14,5 @@ webscreenshot
 netaddr
 pymetasploit3
 psutil
+setproctitle
+pandas

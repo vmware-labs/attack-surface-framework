@@ -210,13 +210,17 @@ Save Your Search:
                           <td>
                              {{ item.name }}
                           </td>
-                          <td>
+                          <td style="word-wrap: break-word;">
                             I:{{ item.regexp }}<br> E:{{ item.exclude }}
                           </td>
                           <td class="text-primary">
                             {{ item.info }}
                           </td>
                           <td style="text-align: center;">
+
+<button type="submit" class="" title="Edit" width="60px"  onclick="row = document.getElementById('editor_{{ item.id }}'); if (row.style.display=='none') {row.style.display='';}else{row.style.display='none';}" style="display: inline;">
+<i class="feather icon-edit"></i>
+</button>
 <form class="navbar-form" action="vd-portscan" method="post" style="display: inline;">
  			{%csrf_token%}
              <input type="hidden" name='results_search' value="{{ item.regexp }}" class="form-control">
@@ -256,7 +260,26 @@ Save Your Search:
 </form>
                           </td>
                         </tr>
-
+<!-- Inline editor Starts -->
+<tr style="display: none;" id="editor_{{ item.id }}">
+  <td colspan="5">
+  <form action="vd-portscan" method="post">
+  Save Your Search:
+         {%csrf_token%}
+          Description:<input type="text" name='regexp_info' value="{{ item.info }}" class="form-control" placeholder="Description">
+               Include:<input type="text" name='regexp_query' value="{{ item.regexp }}" class="form-control">
+               Exclude:<input type="text" name='regexp_exclude' value="{{ item.exclude }}" class="form-control">
+               <input type="hidden" name='regexp_name' value="{{ item.name }}" class="form-control" placeholder="Title for your RegExp">
+               <input type="hidden" name="regexp_id" value="{{ item.id }}">
+         <input type="hidden" name="nmap_action" value="save_regexp">
+               <button type="submit" class="form-control" title="Save search">
+               <i class="material-icons">save</i>
+               <div class="ripple-container"></div>
+               </button>
+  </form>
+  </td>
+  </tr>
+<!-- Inline editor Ends -->
 {% endfor %}
                       </tbody>
                     </table>

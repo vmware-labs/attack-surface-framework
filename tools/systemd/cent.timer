@@ -1,0 +1,11 @@
+[Unit]
+Description=Nuclei Update Service
+Requires=docker.service
+
+[Timer]
+OnCalendar=Mon,Tue,Wed,Thu,Fri,Sat,Sun 23:50
+Unit=cent.service
+
+[Install]
+WantedBy=multi-user.target
+

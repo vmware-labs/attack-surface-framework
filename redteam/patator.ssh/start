@@ -26,8 +26,8 @@ cd /opt/asf/frontend/asfui
 . bin/activate
 python3 /opt/asf/frontend/asfui/manage.py remaster_input --input JobID:$1 --parser host --output "$JOB_FOLDER/app.input"
 mkdir -p $JOB_OUTPUT_FOLDER
-cp /opt/asf/tools/dicts/default.dict "$JOB_FOLDER/app.dict"
-cp /opt/asf/tools/dicts/users.dict "$JOB_FOLDER/app.users"
+cp /opt/asf/tools/dicts/spray-rdp-passwords.dict "$JOB_FOLDER/app.dict"
+cp /opt/asf/tools/dicts/spray-rdp-users.dict "$JOB_FOLDER/app.users"
 for mode in input asf dict users
 do cp -v "$JOB_FOLDER/app.$mode" "$JOB_OUTPUT_FOLDER/app.$mode"
 done
