@@ -1,0 +1,50 @@
+#!/bin/bash
+
+if test "f$1" "=" "f"
+then 
+    echo "Error, please specify a JobID"
+    exit 1
+fi
+. /opt/asf/tools/scripts/arguments nowaf $1
+DATE_STAMP=`date +"%Y%m%d%H%M%S"`
+JOB_FOLDERS="/home/asf/jobs"
+JOB_FOLDER="$JOB_FOLDERS/$1"
+JOB_OUTPUT_FOLDER="$JOB_FOLDER/$DATE_STAMP"
+#Here we create the folders from test.sh
+mkdir -p $JOB_OUTPUT_FOLDER/subprocess_intermediate
+mkdir -p $JOB_OUTPUT_FOLDER/all_status_files
+export TESTSSL_INSTALL_DIR=/opt/asf/tools/testssl
+TERM="xterm"
+if ! test -e "$JOB_FOLDER"
+then 
+    echo "Error, JobID $1 is invalid"
+    exit 1
+fi
+if test -e "JOB_FOLDER/.lock"
+then 
+	echo "Error, process is already running"
+	exit 1
+fi
+echo > "$JOB_FOLDER/.lock"
+cd /opt/asf/frontend/asfui
+. bin/activate
+python3 /opt/asf/frontend/asfui/manage.py remaster_input --input JobID:$1 --parser host --output "$JOB_FOLDER/app.input"
+mkdir -p $JOB_OUTPUT_FOLDER
+cp /opt/asf/tools/dicts/default.dict "$JOB_FOLDER/app.dict"
+cp /opt/asf/tools/dicts/users.dict "$JOB_FOLDER/app.users"
+for mode in input asf dict users
+do cp -v "$JOB_FOLDER/app.$mode" "$JOB_OUTPUT_FOLDER/app.$mode"
+done
+cp -v "$JOB_FOLDER/msf.asfui" "$JOB_OUTPUT_FOLDER/msf.asfui"
+echo "bash /opt/asf/redteam/nowaf/run.sh $JOB_OUTPUT_FOLDER 2>&1 > \"$JOB_OUTPUT_FOLDER/app.log\""
+bash /opt/asf/redteam/nowaf/run.sh $JOB_OUTPUT_FOLDER 2>&1 > "$JOB_OUTPUT_FOLDER/app.log" &
+#mkdir -p $JOB_OUTPUT_FOLDER/results/
+#cp -v $JOB_OUTPUT_FOLDER/app.report.txt $JOB_OUTPUT_FOLDER/results/app.report.txt
+JOB_PID=$!
+echo $JOB_PID>"$JOB_FOLDER/pid"
+wait $PID
+python3 /opt/asf/frontend/asfui/manage.py remaster_output --parser=nuclei.onlyalert --debug --input="$JOB_OUTPUT_FOLDER/app.report.txt" --output=JobID:$1
+python3 /opt/asf/frontend/asfui/manage.py remaster_output --parser=nuclei.waf --debug --input="$JOB_OUTPUT_FOLDER/app.report.txt" --output=JobID:$1
+python3 /opt/asf/frontend/asfui/manage.py parser_tools --parser=nuclei.waf.rc --debug --input="$JOB_OUTPUT_FOLDER/all_status_files" --output=JobID:$1 
+rm -v "$JOB_FOLDER/pid"
+rm -v "$JOB_FOLDER/.lock"

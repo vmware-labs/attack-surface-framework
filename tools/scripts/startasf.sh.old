@@ -1,0 +1,7 @@
+#!/bin/bash
+/bin/virtual.swap
+. /opt/asf/frontend/asfui/bin/activate
+cd /opt/asf/frontend/asfui/
+nohup python3 /opt/asf/frontend/asfui/manage.py runserver 0.0.0.0:2021 &
+nohup /opt/asf/tools/alertmonitor/alertmon.sh
+

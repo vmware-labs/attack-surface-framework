@@ -1,0 +1,2 @@
+HTTPx Response Codes, 400 >= 4xx < 500, 500 >= 5xx < 600
+ARG0 = 4xx,5xx

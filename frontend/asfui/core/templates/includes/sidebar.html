@@ -5,9 +5,10 @@
            target="_blank" rel="noopener noreferrer" 
            href="https://www.creative-tim.com/product/material-dashboard-django" class="simple-text logo-normal">
           </a>
-
           <img src="/static/assets/asf/logo2.png" width="50%">
  -->
+
+
       </div>
       {% if user.is_authenticated %}
       <div class="sidebar-wrapper">
@@ -27,13 +28,13 @@
 		             <li class="nav-item {% if 'vd-amass' in segment %} active {% endif %}">
 		            <a class="nav-link" href="/vd-amass">
 		              <i class="material-icons">library_books</i>
-		              <p>Subfinder Scans</p>
+		              <p>Discovery</p>
 		            </a>
 		          </li>
 		            <li class="nav-item {% if 'vd-portscan' in segment %} active {% endif %}">
 		            <a class="nav-link" href="/vd-portscan">
 		              <i class="material-icons">bubble_chart</i>
-		              <p>Port Scans</p>
+		              <p>Enumeration</p>
 		            </a>
 		          </li>
 		    </ul>
@@ -67,7 +68,7 @@
            <li class="nav-item {% if 'vd-nuclei' in segment %} active {% endif %}">
             <a class="nav-link" href="/vd-nuclei">
               <i class="material-icons">api</i>
-              <p>Alerts</p>
+              <p>Findings</p>
             </a>
           </li>
           <li class="nav-item {% if 'vd-nuclei-templates' in segment %} active {% endif %}">

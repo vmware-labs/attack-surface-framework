@@ -1,0 +1,6 @@
+[Unit]
+Description=Update Nuclei Templates
+Requires=docker.service
+
+[Service]
+ExecStart=/root/go/bin/cent -p /home/nuclei-templates/ -k

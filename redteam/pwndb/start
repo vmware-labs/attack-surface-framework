@@ -1,0 +1,52 @@
+#!/bin/bash
+
+if test "f$1" "=" "f"
+then
+    echo "Error, please specify a JobID"
+    exit 1
+fi
+. /opt/asf/tools/scripts/arguments pwndb $1
+DATE_STAMP=`date +"%Y%m%d%H%M%S"`
+JOB_FOLDERS="/home/asf/jobs"
+JOB_FOLDER="$JOB_FOLDERS/$1"
+JOB_OUTPUT_FOLDER="$JOB_FOLDER/$DATE_STAMP"
+TERM="xterm"
+if ! test -e "$JOB_FOLDER"
+then
+    echo "Error, JobID $1 is invalid"
+    exit 1
+fi
+if test -e "JOB_FOLDER/.lock"
+then
+        echo "Error, process is already running"
+        exit 1
+fi
+echo > "$JOB_FOLDER/.lock"
+cd /opt/asf/frontend/asfui
+. bin/activate
+#python3 /opt/asf/frontend/asfui/manage.py parse_tools --debug --input JobID:$1 --parser list.domains --output "$JOB_FOLDER/app.input"
+#Override static input "$JOB_FOLDER/app.input"
+#cp /opt/asf/redteam/socialsearch/static.list "$JOB_FOLDER/app.input"
+mkdir -p $JOB_OUTPUT_FOLDER
+cp /opt/asf/redteam/pwndb/static.list "$JOB_FOLDER/app.input"
+cp /opt/asf/tools/dicts/default.dict "$JOB_FOLDER/app.dict"
+cp /opt/asf/tools/dicts/users.dict "$JOB_FOLDER/app.users"
+for mode in input asf dict users
+do cp -v "$JOB_FOLDER/app.$mode" "$JOB_OUTPUT_FOLDER/app.$mode"
+done
+echo "READING $JOB_OUTPUT_FOLDER/app.input"
+for keyword in $(cat "${JOB_OUTPUT_FOLDER}/app.input")
+do 
+    echo "KEY: ${keyword}"
+    echo curl -H "hibp-api-key:${ARG0}" -H "user-agent: ASF" -sS https://haveibeenpwned.com/api/v3/breaches?domain=${keyword} -o "$JOB_OUTPUT_FOLDER/app_${keyword}.json" | tee -a "$JOB_OUTPUT_FOLDER/app.report.txt"
+    curl -H "hibp-api-key:${ARG0}" -H "user-agent: ASF" -sS https://haveibeenpwned.com/api/v3/breaches?domain=${keyword} -o "$JOB_OUTPUT_FOLDER/app_${keyword}.json" | tee -a "$JOB_OUTPUT_FOLDER/app.report.txt"
+    python3 /opt/asf/frontend/asfui/manage.py parse_tools --debug --input "$JOB_OUTPUT_FOLDER/app_${keyword}.json" --parser pwndb.output
+    sleep ${ARG1}s
+done
+#NOT REQUIRED PID MONITOR WGET IS ALMOST INSTANT
+#JOB_PID=$!
+#echo $JOB_PID>"$JOB_FOLDER/pid"
+#wait $PID
+#python3 /opt/asf/frontend/asfui/manage.py remaster_output --parser=nuclei.http --debug --input="$JOB_OUTPUT_FOLDER/app.report.txt" --output=JobID:$1
+rm -v "$JOB_FOLDER/pid"
+rm -v "$JOB_FOLDER/.lock"
