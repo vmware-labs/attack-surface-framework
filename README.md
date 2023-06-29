@@ -16,8 +16,6 @@ ASF is a breed of open source projects leveraging a powerful arsenal of tools wr
 
 Latest version of Kali Linux (tested on 64 bits) - https://kali.org/get-kali/
 
-Latest version of Subfinder installed, for instructions see https://github.com/projectdiscovery/subfinder
-
 16 GB of RAM at least
 
 1 TB HD - XFS filesystem recommended
@@ -31,11 +29,8 @@ As root
 3. Run `./setup.sh`
 4. Assign youruser, email and yourpass
 
-Once the installation is completed
+Once the installation is completed ASF will be available as a service on `http://127.0.0.1:2021`
 
-5. `cd /opt/asf/frontend/asfui/`
-6. `. bin/activate`
-7. `python3 manage.py runserver 0.0.0.0:8080` - We recommend to run it on a screen session to leave server persistent (`screen -S asf`)
 
 ### Security
 
