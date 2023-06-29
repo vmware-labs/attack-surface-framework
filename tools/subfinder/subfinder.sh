@@ -13,8 +13,12 @@ mkdir -p "${OUTPUT_DIR_PATH}/history"
 debugsub "Created folders and Time Stamp"
 if test -e "${OUTPUT_DIR_PATH}/.lock"
 	then echo "Already running"
-		debugsub "Quitting because already running"
-		exit 1
+		debugsub "Checking ps table for subfinder"
+		if ps -Af | grep -v grep | grep subfinder
+		    then debugsub "Quitting because already running"
+		    exit 1
+		fi
+		debugsub "Checking ps table for subfinder.. not found.! keep going."
 fi
 debugsub "Creating lock file"
 echo > "${OUTPUT_DIR_PATH}/.lock"

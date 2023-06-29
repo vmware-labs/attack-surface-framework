@@ -1,7 +1,4 @@
-Here is where you add arguments that will be passed to below command (located in /opt/redteam/nuclei/start) 
-
+Command with arguments amigo O.o
+Note: For running specific templats use the full path mapped to the container: /app/nuclei-templates/<folder or file>
+Note: location in localhost is in "/home/nuclei-templates:
 "docker run --rm -v $JOB_OUTPUT_FOLDER/:/mnt -v /home/nuclei-templates:/app/nuclei-templates $IMAGE_NAME -no-color $ARG0 -l /mnt/app.input $ARG1"
-
-Note1: You can add a max of 10 arguments
-Note2: If you want to select all templates from Nuclei just add -t /app/nuclei-templates
-Note3: For running specific templates /app/nuclei-templates/<<folder or file>> (Location in localhost is in "/home/nuclei-templates)

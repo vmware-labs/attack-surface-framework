@@ -4,7 +4,7 @@
 KUBE_VARS_FILE=/opt/asf/.kube_vars
 . $KUBE_VARS_FILE
 
-# echo "Kuberenete FLAG : $KUBE_FLAG" >> /var/log/eyewitness.log
+# echo "Kuberenete FLAG : $KUBE_FLAG" >> /var/log/nuclei.log
 
 if [ $KUBE_FLAG = "TRUE" ]
 then
@@ -43,7 +43,7 @@ JOB_OUTPUT_FOLDER="$JOB_FOLDER/$DATE_STAMP"
 TERM="xterm"
 if ! test -e "$JOB_FOLDER"
 then 
-    echo "Error, JobID $1 is invalid"
+    echo "Error, JobID $1 is invalid."
     exit 1
 fi
 if test -e "JOB_FOLDER/.lock"
@@ -61,11 +61,11 @@ cp /opt/asf/tools/dicts/users.dict "$JOB_FOLDER/app.users"
 for mode in input asf dict users
 do cp -v "$JOB_FOLDER/app.$mode" "$JOB_OUTPUT_FOLDER/app.$mode"
 done
-IMAGE_NAME='projectdiscovery/nuclei'
-#IMAGE_NAME='m4ch1n3s/nuclei'
+#IMAGE_NAME='projectdiscovery/nuclei'
+IMAGE_NAME='m4ch1n3s/nuclei'
 if ! docker images | grep $IMAGE_NAME
-then echo "Pulling nuclei..."
-docker pull $IMAGE_NAME:latest
+then echo "Building nuclei..."
+docker build -t $IMAGE_NAME /opt/asf/redteam/nuclei/nuclei-master/
 fi
 mkdir -p /home/nuclei-templates
 chmod 777 /home/nuclei-templates
@@ -73,14 +73,9 @@ if ! test -e /home/nuclei-templates/README.md
 then
 	docker run -i --rm -v $JOB_OUTPUT_FOLDER/:/mnt -v /home/nuclei-templates:/app/nuclei-templates $IMAGE_NAME  -update-templates 2>&1 > "$JOB_OUTPUT_FOLDER/app.log"
 fi
-#Reading exclude file
-python3 /opt/asf/frontend/asfui/manage.py nucleialert --mode=blacklist.save --templatesdir /home/nuclei-templates --templatesignorefile /home/nuclei-templates/.nuclei-ignore
-#$ARG0-$ARG9
 if [ $KUBE_FLAG = "TRUE" ]
 then
-
-    # TODO: get namespace as input from user
-    echo "Executing kubectl" >> /var/log/nuclei.log
+    # echo "Executing kubectl" >> /var/log/nuclei.log
     # apply deployment yaml to k8s cluster
     cat <<EOF | kubectl apply -f -
 apiVersion: v1
@@ -122,25 +117,34 @@ EOF
     # waiting for pod ready status
     kubectl wait --for=condition=Ready pod/nuclei-$DATE_STAMP
     echo "kubectl wait --for=condition=Ready pod/nuclei-$DATE_STAMP"
-    #echo "kubectl apply is success" >> /var/log/nuclei.log
+    # echo "kubectl apply is success" >> /var/log/nuclei.log
 
     # copy the app.input file to k8s folder
     kubectl cp $JOB_FOLDER/app.input $NAMESPACE/nuclei-$DATE_STAMP:/mnt/
-    #echo "kubectl copy is done" >> /var/log/nuclei.log
+    # echo "kubectl copy is done" >> /var/log/nuclei.log
+
+    # copy updated templates for nuclei
+    kubectl cp /home/nuclei-templates $NAMESPACE/nuclei-$DATE_STAMP:/app
+    # echo "kubectl cp /home/nuclei-templates $NAMESPACE/nuclei-$DATE_STAMP:/app" >> /var/log/nuclei.log
+
     # update templates for nuclei
-    kubectl exec --stdin --tty nuclei-$DATE_STAMP -- nuclei -update-templates -update-directory /app/nuclei-templates 2>&1  >> $JOB_OUTPUT_FOLDER/app.log
-    #echo "kubectl exec is completed" >> /var/log/nuclei.log
+    # kubectl exec --stdin --tty nuclei-$DATE_STAMP -- nuclei -update-templates -update-directory /app/nuclei-templates 2>&1  >> $JOB_OUTPUT_FOLDER/app.log
+
     # run the nuclei command
-    kubectl exec --stdin --tty nuclei-$DATE_STAMP -- nuclei -v -no-color -t /app/nuclei-templates/cves/ -l /mnt/app.input 2>&1 | tee $JOB_OUTPUT_FOLDER/app.report.txt >> $JOB_OUTPUT_FOLDER/app.log
+    kubectl exec --stdin --tty nuclei-$DATE_STAMP -- nuclei -v -no-color -t /app/nuclei-templates -l /mnt/app.input $ARG1 $ARG2 $ARG3 $ARG4 $ARG5 $ARG6 $ARG7 $ARG8 $ARG9 2>&1 | tee $JOB_OUTPUT_FOLDER/app.report.txt >> $JOB_OUTPUT_FOLDER/app.log |  python3 /opt/asf/frontend/asfui/manage.py remaster_output --parser=nuclei --debug --input="stdin" --output=JobID:$1 >> "$JOB_OUTPUT_FOLDER/app.log" &
+    # echo "kubectl exec is completed" >> /var/log/nuclei.log
+
     kubectl delete pod nuclei-$DATE_STAMP
 else
-    #echo "executing docker" >> /var/log/nuclei.log
-    echo docker run --rm -v $JOB_OUTPUT_FOLDER/:/mnt -v /home/nuclei-templates:/app/nuclei-templates $IMAGE_NAME -t /app/nuclei-templates/ -no-color $ARG0 -l /mnt/app.input $ARG1 $ARG2  2>&1 \| tee "$JOB_OUTPUT_FOLDER/app.report.txt" \>\> "$JOB_OUTPUT_FOLDER/app.log" \&
-    docker run --rm -v $JOB_OUTPUT_FOLDER/:/mnt -v /home/nuclei-templates:/app/nuclei-templates $IMAGE_NAME -t /app/nuclei-templates/ -no-color $ARG0 -l /mnt/app.input $ARG1 $ARG2  2>&1 | tee "$JOB_OUTPUT_FOLDER/app.report.txt" >> "$JOB_OUTPUT_FOLDER/app.log" &
+  #$ARG0-$ARG9
+  echo docker run --rm -v $JOB_OUTPUT_FOLDER/:/mnt -v /home/nuclei-templates:/app/nuclei-templates $IMAGE_NAME -duc -jsonl -no-color $ARG0 -l /mnt/app.input $ARG1 $ARG2 $ARG3 $ARG4 $ARG5 $ARG6 $ARG7 $ARG8 $ARG9  2>&1 \| tee "$JOB_OUTPUT_FOLDER/app.report.txt" \>\> "$JOB_OUTPUT_FOLDER/app.log" \&
+  #docker run --rm -v $JOB_OUTPUT_FOLDER/:/mnt -v /home/nuclei-templates:/app/nuclei-templates $IMAGE_NAME -no-color $ARG0 -l /mnt/app.input $ARG1 $ARG2 $ARG3 $ARG4 $ARG5 $ARG6 $ARG7 $ARG8 $ARG9 2>&1 | tee "$JOB_OUTPUT_FOLDER/app.report.txt" >> "$JOB_OUTPUT_FOLDER/app.log" &
+  docker run --rm -v $JOB_OUTPUT_FOLDER/:/mnt -v /home/nuclei-templates:/app/nuclei-templates $IMAGE_NAME -duc -jsonl -no-color $ARG0 -l /mnt/app.input $ARG1 $ARG2 $ARG3 $ARG4 $ARG5 $ARG6 $ARG7 $ARG8 $ARG9 2>&1 | tee "$JOB_OUTPUT_FOLDER/app.report.txt" |  python3 /opt/asf/frontend/asfui/manage.py remaster_output --parser=nuclei --debug --input="stdin" --output=JobID:$1 >> "$JOB_OUTPUT_FOLDER/app.log" &
 fi
+
 JOB_PID=$!
 echo $JOB_PID>"$JOB_FOLDER/pid"
 wait $PID
-python3 /opt/asf/frontend/asfui/manage.py remaster_output --parser=nuclei.http --debug --input="$JOB_OUTPUT_FOLDER/app.report.txt" --output=JobID:$1
+#python3 /opt/asf/frontend/asfui/manage.py remaster_output --parser=nuclei.http --debug --input="$JOB_OUTPUT_FOLDER/app.report.txt" --output=JobID:$1
 rm -v "$JOB_FOLDER/pid"
 rm -v "$JOB_FOLDER/.lock"

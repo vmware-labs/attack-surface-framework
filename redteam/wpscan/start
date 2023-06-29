@@ -5,7 +5,7 @@ then
     echo "Error, please specify a JobID"
     exit 1
 fi
-. /opt/asf/tools/scripts/arguments nuclei $1
+. /opt/asf/tools/scripts/arguments wpscan $1
 DATE_STAMP=`date +"%Y%m%d%H%M%S"`
 JOB_FOLDERS="/home/asf/jobs"
 JOB_FOLDER="$JOB_FOLDERS/$1"
@@ -24,7 +24,9 @@ fi
 echo > "$JOB_FOLDER/.lock"
 cd /opt/asf/frontend/asfui
 . bin/activate
-python3 /opt/asf/frontend/asfui/manage.py remaster_input --input JobID:$1 --parser url --output "$JOB_FOLDER/app.input"
+#python3 /opt/asf/frontend/asfui/manage.py remaster_input --input JobID:$1 --parser url --output "$JOB_FOLDER/app.input"
+#Override static input "$JOB_FOLDER/app.input"
+cp /opt/asf/redteam/wpscan/static.list "$JOB_FOLDER/app.input"
 mkdir -p $JOB_OUTPUT_FOLDER
 cp /opt/asf/tools/dicts/default.dict "$JOB_FOLDER/app.dict"
 cp /opt/asf/tools/dicts/users.dict "$JOB_FOLDER/app.users"
@@ -37,8 +39,7 @@ then echo "Building wpscan..."
 docker pull $IMAGE_NAME
 fi
 echo "/opt/asf/redteam/wpscan/wpscan.sh $JOB_FOLDER/app.input"
-/opt/asf/redteam/wpscan/wpscan.sh "$JOB_FOLDER/app.input" | tee "$JOB_OUTPUT_FOLDER/app.report.txt" >> "$JOB_OUTPUT_FOLDER/app.log" &
-
+/opt/asf/redteam/wpscan/wpscan.sh "$JOB_FOLDER/app.input" "$JOB_OUTPUT_FOLDER" | tee "$JOB_OUTPUT_FOLDER/app.report.txt" >> "$JOB_OUTPUT_FOLDER/app.log" &
 JOB_PID=$!
 echo $JOB_PID>"$JOB_FOLDER/pid"
 wait $PID

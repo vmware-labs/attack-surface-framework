@@ -6,11 +6,46 @@
 {% block stylesheets %}{% endblock stylesheets %}
 
 {% block content %}
+<form class="navbar-form" action="vd-amass" method="post" enctype="multipart/form-data" style="display: inline;">
+ 			{%csrf_token%}
+              <span class="bmd-form-group"><div class="input-group no-border">
+              <table>
+              <tr>
+              <td>
+                <input type="text" name='amass_domain' value="" class="form-control" placeholder="IP, CIDR or TLD">
+               </td>
+               <td>
+                <input type="file" name="amass_file">
+                <input type="hidden" name="amass_action" value="new">
+               </td>
+               <td>
+                <select name="mode">
+                <option value="merge" selected>Merge</option>
+                <option value="delete">Delete</option>
+				<option value="deletebytag">Delete by Tag</option>                
+                <option value="sync">Synchronize</option>
+                </select>
+               </td>
+               <td>
+                <input onClick="this.select();" type="text" name='tag' value="DEFAULT" class="form-control" placeholder="TAG" size="10">
+               </td>
+               <td>
+                <button type="submit" class="btn btn-white btn-round btn-just-icon">
+                  <i class="material-icons">save</i>
+                  <div class="ripple-container"></div>
+                </button>
+               </td>
+                </tr>
+                </table>                
+              </div></span>
+</form>
+<b>Merge:</b>Append new objects. <b>Delete:</b> Removes matching objects. <b>Sync:</b>Flush Orphans and append new assets by TAG.
+
         <div class="row">
             <div class="col-md-12">
               <div class="card">
                 <div class="card-header card-header-primary">
-                  <h4 class="card-title ">Discovery</h4>
+                  <h4 class="card-title ">Discovery Service</h4>
                 </div>
                 <div class="card-body">
                   <div class="table-responsive">
@@ -243,7 +278,7 @@ Service waiting
                             {{ item.type }}
                           </td>
                           <td>
-                            {{ item.tags }}
+                            {{ item.tag }}
                           </td>                          
                           <td>
                             {{ item.lastdate }}

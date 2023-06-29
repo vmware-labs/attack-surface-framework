@@ -444,12 +444,20 @@ def portscan(request):
         regexp_info = "Default"
         if 'regexp_info' in request.POST:
             regexp_info = request.POST['regexp_info']
+        NewRegExp = vdRegExp(name = regexp_name, regexp = regexp_query, exclude = regexp_exclude, info = regexp_info)
         try:
-            NewRegExp = vdRegExp(name = regexp_name, regexp = regexp_query, exclude = regexp_exclude, info = regexp_info)
             NewRegExp.save()
         except:
             sys.stderr.write("Duplicated RegExpr, Skipping:"+regexp_name)
-            context['error'] = "Duplicated or Wrong Data"
+            if 'regexp_id' in request.POST:
+                OldID=int(request.POST['regexp_id'])
+            OldReg=vdRegExp.objects.get(id=OldID)
+            OldReg.regexp = regexp_query
+            OldReg.exclude = regexp_exclude
+            OldReg.info = regexp_info
+            OldReg.save()
+            context['error'] = "Updating duplicated name or Wrong Data"
+
     def nmap_delete_regexp():
         if "regexp_id" in request.POST:
             regexp_id = request.POST['regexp_id']
@@ -951,9 +959,11 @@ def export(request):
                 sys.stderr.write("Error looking for the regular expression\n")
                 
         query = search(regexp, 'services', exclude)
-        writer.writerow(['name', 'cname', 'ipv4', 'lastdate', 'ports', 'full_ports', 'service_ssh', 'service_rdp', 'service_telnet', 'service_ftp', 'service_smb', 'nuclei_http', 'owner', 'tag', 'metadata'])
+        #writer.writerow(['name', 'cname', 'ipv4', 'lastdate', 'ports', 'full_ports', 'service_ssh', 'service_rdp', 'service_telnet', 'service_ftp', 'service_smb', 'nuclei_http', 'owner', 'tag', 'metadata'])
+        writer.writerow(['name', 'cname', 'ipv4', 'lastdate', 'ports', 'full_ports', 'owner', 'tag', 'metadata'])
         for host in query:
-            writer.writerow([host.name, host.nname, host.ipv4, host.lastdate, host.ports, host.full_ports, host.service_ssh, host.service_rdp, host.service_telnet, host.service_ftp, host.service_smb, host.nuclei_http, host.owner, host.tag, host.metadata])
+            #writer.writerow([host.name, host.nname, host.ipv4, host.lastdate, host.ports, host.full_ports, host.service_ssh, host.service_rdp, host.service_telnet, host.service_ftp, host.service_smb, host.nuclei_http, host.owner, host.tag, host.metadata])
+            writer.writerow([host.name, host.nname, host.ipv4, host.lastdate, host.ports, host.full_ports, host.owner, host.tag, host.metadata])
         return
 
     def export_inservices(writer):
@@ -969,11 +979,13 @@ def export(request):
                 sys.stderr.write("Error looking for the regular expression\n")
                 
         query = search(regexp, 'inservices', exclude)
-        writer.writerow(['name', 'cname', 'ipv4', 'lastdate', 'ports', 'full_ports', 'service_ssh', 'service_rdp', 'service_telnet', 'service_ftp', 'service_smb', 'nuclei_http', 'owner', 'tag', 'metadata'])
+        #writer.writerow(['name', 'cname', 'ipv4', 'lastdate', 'ports', 'full_ports', 'service_ssh', 'service_rdp', 'service_telnet', 'service_ftp', 'service_smb', 'nuclei_http', 'owner', 'tag', 'metadata'])
+        writer.writerow(['name', 'cname', 'ipv4', 'lastdate', 'ports', 'full_ports', 'owner', 'tag', 'metadata'])
         for host in query:
-            writer.writerow([host.name, host.nname, host.ipv4, host.lastdate, host.ports, host.full_ports, host.service_ssh, host.service_rdp, host.service_telnet, host.service_ftp, host.service_smb, host.nuclei_http, host.owner, host.tag, host.metadata])
+            #writer.writerow([host.name, host.nname, host.ipv4, host.lastdate, host.ports, host.full_ports, host.service_ssh, host.service_rdp, host.service_telnet, host.service_ftp, host.service_smb, host.nuclei_http, host.owner, host.tag, host.metadata])
+            writer.writerow([host.name, host.nname, host.ipv4, host.lastdate, host.ports, host.full_ports, host.owner, host.tag, host.metadata])
         return
-    
+            
     def export_targets(writer):
         query = vdTarget.objects.all()
         writer.writerow(['name', 'type', 'lastdate', 'itemcount', 'tag', 'owner', 'metadata'])

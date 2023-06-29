@@ -256,9 +256,10 @@ def master_parser_nuclei(PARSER_INPUT, PARSER_OUTPUT, FILTER):
         scope="I"
     for line in PARSER_INPUT:
         debug(line+"\n")
-        if NUCLEI_FINDING.match(line):
-            debug("Line contains the FINDING regular expression\n")
+        if line.startswith("{"):
+            debug("Line contains the JSONL START CHAR\n")
             DATA = NFinding(line,scope)
+            EDATA = DATA.getList()
             if FILTER is not None:
                 DATA=FILTER(DATA)
             debug(str(DATA)+"\n")
@@ -278,7 +279,7 @@ def master_parser_nuclei(PARSER_INPUT, PARSER_OUTPUT, FILTER):
                     #Here we work in the main data information, grouping the findings all together.
                     OldData = PARSER_OUTPUT.objects.filter(name=DATA.name)
                     NEWMETADATA=""
-                    MDT={'owner':'Unknown'}
+                    MDT = {'owner':'Unknown'}
                     if OldData.count()==1:
                         MDT,METADATA = get_metadata(DATA.name)
                         OLDMETADATA=OldData[0].metadata
@@ -292,8 +293,11 @@ def master_parser_nuclei(PARSER_INPUT, PARSER_OUTPUT, FILTER):
                             OldData.update(nuclei_http=line, owner=MDT['owner'], metadata=NEWMETADATA)
                 
                         if ((DATA.name in delta_cache) and (line not in delta_cache[DATA.name])) or (DATA.name not in delta_cache):
-                            MSG = {'message':"[NUCLEI][New Finding]", 'host':DATA.name, 'finding':line}
+                            #Removing line, since all fields goes trow the alert.
+                            #MSG = {'message':"[NUCLEI][New Finding]", 'host':DATA.name, 'finding':line}
+                            MSG = {'message':"[NUCLEI][New Finding]", 'host':DATA.name}
                             MSG.update(MDT)
+                            MSG.update(EDATA)
                             delta(MSG)
                     else:
                         #This line is a temporary MOD, please comment for system integrity, all objects should exist
@@ -325,12 +329,12 @@ def parser_nuclei_waf(PARSER_INPUT, PARSER_OUTPUT):
     return master_parser_nuclei(PARSER_INPUT, PARSER_OUTPUT, filter_nuclei_waf)
 
 def filter_nuclei_waf(DATA):
-    if DATA.temp_array[2]=='failed':
-        DATA.level="medium"
-        DATA.vulnerability="MISSING-WAF"
-        return DATA
-    else:
-        return None
+    if 'matcher-status' in DATA.parsedline:
+        if DATA.parsedline['matcher-status']==False:
+            DATA.level="medium"
+            DATA.vulnerability="MISSING-WAF"
+            return DATA
+    return None
 
 
 def parser_nuclei_onlyalert(PARSER_INPUT, PARSER_OUTPUT):
@@ -344,27 +348,19 @@ def parser_nuclei_onlyalert(PARSER_INPUT, PARSER_OUTPUT):
         scope="I"
     for line in PARSER_INPUT:
         debug(line+"\n")
-        if NUCLEI_FINDING.match(line):
+        if line.startswith("{"):
             debug("Line contains the FINDING regular expression\n")
             DATA = NFinding(line,scope)
             debug(str(DATA)+"\n")
             if DATA.full_uri is not None:
                 #NFinding class now does all the job parsing Nuclei findings, even domain or IP address.
                 UNIQUE_KEY = str(DATA.name)+"|"+str(DATA.vulnerability)
-                debug("Searching:"+str(UNIQUE_KEY)+"\n")
-                debug("Values:"+str(DATA.temp_array)+"\n")
-                MSG = {'message':"[NUCLEI][New Finding]", 'host':DATA.name, 'finding':line}
-                MSG['datetime']=str(DATA.detectiondate)
-                MSG['url']=DATA.full_uri
-                MSG['waf']=DATA.temp_array[1]
-                MSG['status']=DATA.temp_array[2]
-                MSG['protocol']=DATA.temp_array[3]
-                #Level is always 'info'
-                MSG['level']=DATA.temp_array[4]
+                debug("OnlyAlert for:"+str(UNIQUE_KEY)+"\n")
+                MSG = {'message':"[NUCLEI][New Finding]", 'host':DATA.name}
+                MSG.update(DATA.getList())
                 delta(MSG)
 
     return
-
 
 #Here is the global declaration of parsers, functions can be duplicated
 action={'default':parser_default, 'patator.ssh':parser_patator_ssh, 'patator.rdp':parser_patator_rdp, 'patator.ftp':parser_patator_ftp, 'patator.telnet':parser_patator_telnet, 'hydra.ftp':parser_hydra_ftp, 'hydra.telnet':parser_hydra_telnet, 'nuclei.http':parser_nuclei_http, 'nuclei.network':parser_nuclei_network, 'nuclei':parser_nuclei, 'nuclei.onlyalert':parser_nuclei_onlyalert, 'nuclei.waf':parser_nuclei_waf}

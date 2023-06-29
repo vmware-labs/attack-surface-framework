@@ -12,7 +12,7 @@ then
     #echo "Using Kuberenetes" >> /var/log/eyewitness.log
     # Get current context
     KUBE_CONTEXT=$(cat ~/.kube/config | grep "current-context:" | sed "s/current-context: //")
-   
+
     #echo "Kuberenetes context:  $KUBE_CONTEXT" >> /var/log/eyewitness.log
     if [ -z ${KUBE_CONTEXT} ]
     then
@@ -105,13 +105,13 @@ spec:
       securityContext:
         allowPrivilegeEscalation: false
 EOF
-    
+
     kubectl wait --for=condition=Ready pod/eyewitness-$DATE_STAMP
     echo "kubectl wait --for=condition=Ready pod/eyewitness-$DATE_STAMP"
     #echo "kubectl apply is success" >> /var/log/eyewitness.log
     # copy the app.input file to k8s tmp folder
     kubectl cp $JOB_FOLDER/app.input $NAMESPACE/eyewitness-$DATE_STAMP:/tmp
-    
+
     #echo "kubectl copy is done" >> /var/log/eyewitness.log
     # run the Eyewitness command
     kubectl exec --stdin --tty eyewitness-$DATE_STAMP -- Python/EyeWitness.py --web -f /tmp/app.input --timeout 123 --results 300 -d /tmp/$DATE_STAMP --selenium-log-path /tmp/.geckodriver.log --no-prompt 2>&1 > app.log
@@ -123,9 +123,8 @@ EOF
     # delete the pod
     kubectl delete pod eyewitness-$DATE_STAMP
 else
-    #echo "executing docker" >> /var/log/eyewitness.log
-    echo docker run --rm -v $JOB_OUTPUT_FOLDER/:/tmp/EyeWitness/ m4ch1n3s/eyewitness --web --timeout 120 -f /tmp/EyeWitness/app.input --results 300 --no-prompt 2>&1 \> "$JOB_OUTPUT_FOLDER/app.log"
-    docker run --rm -v $JOB_OUTPUT_FOLDER/:/tmp/EyeWitness/ m4ch1n3s/eyewitness --web --timeout 120 -f /tmp/EyeWitness/app.input --results 300 --no-prompt 2>&1 > "$JOB_OUTPUT_FOLDER/app.log" &
+  echo docker run --rm -v $JOB_OUTPUT_FOLDER/:/tmp/EyeWitness/ m4ch1n3s/eyewitness --web --timeout 120 -f /tmp/EyeWitness/app.input --results 300 --no-prompt 2>&1 \> "$JOB_OUTPUT_FOLDER/app.log"
+  docker run --rm -v $JOB_OUTPUT_FOLDER/:/tmp/EyeWitness/ m4ch1n3s/eyewitness --web --timeout 120 -f /tmp/EyeWitness/app.input --results 300 --no-prompt 2>&1 > "$JOB_OUTPUT_FOLDER/app.log" &
 fi
 
 JOB_PID=$!
