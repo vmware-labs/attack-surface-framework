@@ -22,7 +22,7 @@ Latest version of Kali Linux (tested on 64 bits) - https://kali.org/get-kali/
 
 ### Build & Run
 
-As root
+As root on Kali Linux
 
 1. `git clone https://github.com/vmware-labs/attack-surface-framework.git /opt/asf`
 2. `cd /opt/asf/`
