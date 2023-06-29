@@ -31,11 +31,7 @@ As root
 3. Run `./setup.sh`
 4. Assign youruser, email and yourpass
 
-Once the installation is completed
-
-5. `cd /opt/asf/frontend/asfui/`
-6. `. bin/activate`
-7. `python3 manage.py runserver 0.0.0.0:8080` - We recommend to run it on a screen session to leave server persistent (`screen -S asf`)
+Once the installation is completed ASF will be available as a service on `http://127.0.0.1:2021`
 
 ### Security
 

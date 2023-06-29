@@ -28,8 +28,9 @@ ln -s "${OUTPUT_DIR_PATH}/history/${DSTAMP}_targets.txt" "${OUTPUT_DIR_PATH}/tar
 echo "Executing.."
 #Lock
 debugsub "Running subfinder"
-echo "subfinder -dL ${OUTPUT_DIR_PATH}/targets.txt -all -cs -oJ -o ${OUTPUT_DIR_PATH}/report.txt 2>&1 | tee -a ${OUTPUT_DIR_PATH}/history/${DSTAMP}_discovery.log | grep -e \"^{\" | python3 manage.py parse_tools --parser=subfinder.output --input=stdin 2>&1 | tee -a ${OUTPUT_DIR_PATH}/history/${DSTAMP}_run.log"
-if HOME=/root subfinder -dL ${OUTPUT_DIR_PATH}/targets.txt -all -cs -oJ -o ${OUTPUT_DIR_PATH}/report.txt 2>&1 | tee -a ${OUTPUT_DIR_PATH}/history/${DSTAMP}_discovery.log | grep -e "^{" | python3 manage.py parse_tools --parser=subfinder.output --input=stdin 2>&1 | tee -a ${OUTPUT_DIR_PATH}/history/${DSTAMP}_run.log
+# runnning subfinder through docker now instead of standalone
+echo "docker run -v ${OUTPUT_DIR_PATH}:/${OUTPUT_DIR_PATH} -t projectdiscovery/subfinder -dL ${OUTPUT_DIR_PATH}/targets.txt -all -cs -oJ -o ${OUTPUT_DIR_PATH}/report.txt 2>&1 | tee -a ${OUTPUT_DIR_PATH}/history/${DSTAMP}_discovery.log | grep -e \"^{\" | python3 manage.py parse_tools --parser=subfinder.output --input=stdin 2>&1 | tee -a ${OUTPUT_DIR_PATH}/history/${DSTAMP}_run.log"
+if HOME=/root docker run -v ${OUTPUT_DIR_PATH}:/${OUTPUT_DIR_PATH} -t projectdiscovery/subfinder -dL ${OUTPUT_DIR_PATH}/targets.txt -all -cs -oJ -o ${OUTPUT_DIR_PATH}/report.txt 2>&1| tee -a ${OUTPUT_DIR_PATH}/history/${DSTAMP}_discovery.log | grep -e "^{" | python3 manage.py parse_tools --parser=subfinder.output --input=stdin 2>&1 | tee -a ${OUTPUT_DIR_PATH}/history/${DSTAMP}_run.log
 then 
 	echo "done"
 	debugsub "Success running"
