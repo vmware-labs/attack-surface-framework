@@ -43,17 +43,10 @@ ASF is not meant to be publicly exposed, assuming you install it on a cloud prov
 
 Then open your browser and go to: 
 
-`http://127.0.0.1:8080` - For ASF - user:youruser pass:yourpass (provided in initial setup)
+`http://127.0.0.1:2021` - For ASF - user:youruser pass:yourpass (provided in initial setup)
 
-`https://127.0.0.1:9045` - For Graylog2 - user:admin pass:admin #Change it in /graylog/docker-compose.yaml
 
-Graylog2 requires a few steps to start receiving logs from ASF: 
 
-Once logged in, go to System/"Content Packs" and import the Content Pack located at /opt/asf/tools/graylog/content_pack_ASF.json, click on the "Upload" button and you should see "Basic" reflected in the "Select Content Packs" section, click on "Basic", make sure the "ASF" radio button is selected and hit the "Apply content" button, this will create the Global input to parse JSON logs and related extractors. 
-
-![Graylog2 Inputs Example](images/Graylog_content_pack.jpg)
-
-Now you are ready to receive logs from ASF and setup your streams / alerts / dasboards ! 
 
 More info @ https://docs.graylog.org/en/4.1/ 
 
