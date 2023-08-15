@@ -47,7 +47,6 @@ Then open your browser and go to:
 
 
 
-
 More info @ https://docs.graylog.org/en/4.1/ 
 
 ### Documentation
