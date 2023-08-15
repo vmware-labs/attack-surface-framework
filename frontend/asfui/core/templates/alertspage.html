@@ -1,0 +1,326 @@
+{% extends "layouts/base.html" %}
+
+{% block title %} Target Domain {% endblock %} 
+
+
+<!-- Specific Page CSS goes HERE  -->
+{% block stylesheets %}{% endblock stylesheets %}
+
+{% block content %}
+{{ target_file }}
+<style>
+.tfp-1 {
+  background-color: white;
+}
+.tfp0 {
+  background-color: gray;
+}
+.tfp1 {
+  background-color: orange;
+}
+</style>
+<!--<b>Nuclei Findings:</b>Single domain, multiple urls allowed
+
+<form class="navbar-form" action="vd-export" method="post" style="display: inline;">
+	{%csrf_token%}
+          <span class="bmd-form-group"><div class="input-group no-border">
+ <input type="hidden" name="model" value="nuclei">
+          <button type="submit" class="btn btn-white btn-round btn-just-icon">
+          <i class="material-icons">system_update_alt</i>
+          <div class="ripple-container"></div>
+          </button>
+          </div></span>
+</form>-->
+<!-- Pager  -->
+ <table width="100%">
+ <tr>
+ <td>
+<form class="navbar-form" action="alerts" method="post">
+ 			{%csrf_token%}
+             <span class="bmd-form-group"><div class="input-group no-border">
+             <input type="text" name='alerts_filter_search' class="form-control" placeholder="Search by Finding Name">
+			 <input type="hidden" name="alerts_filter" value="filter">
+			 
+             <button type="submit" class="btn btn-white btn-round btn-just-icon" rel="tooltip" title="" data-original-title="Search">
+             <i class="material-icons">search</i>
+             <div class="ripple-container"></div>
+             </button>
+             </div></span>
+</form>
+ </td>
+ <tr>
+  <td>
+    <form action="alerts" method="post">
+      {%csrf_token%}
+      <input type="hidden" name="alerts_download" value="filter">
+      <button type="submit" class="btn btn-white btn-round btn-just-icon" rel="tooltip" title data-original-title="Download Results">
+        <i class="material-icons">system_update_alt</i>
+      </button>
+
+
+
+
+    </form>
+  </td>
+ </tr>
+	<!--  <td align="center">
+ Objects: [{{ query_count }}]
+                         <form method="post" action="vd-nuclei" style="display: inline;">
+                        {%csrf_token%}
+                          <input type="hidden" name='domain_search' value="{{ domain_search }}">
+                          <input type="hidden" name="nuclei_action" value="delete">
+							{{ nuclei_filter_hidden }}
+							<button type="submit" rel="tooltip" title="" class="btn btn-white btn-round btn-just-icon" data-original-title="Remove">
+                          	<i class="material-icons">close</i>
+                        	</button>
+                        </form>
+					<form method="post" action="vd-nuclei" style="display: inline;">
+                        {%csrf_token%}
+						  <input type="hidden" name='domain_search' value="{{ domain_search }}">
+                          <input type="hidden" name="nuclei_action" value="true">
+							{{ nuclei_filter_hidden }}
+							<button type="submit" rel="tooltip" title="" class="btn btn-white btn-round btn-just-icon" data-original-title="True positive">
+                          	<i class="material-icons">check_circle_outline</i>
+                        	</button>
+                        </form>
+						<form method="post" action="vd-nuclei" style="display: inline;">
+                        {%csrf_token%}
+							<input type="hidden" name='domain_search' value="{{ domain_search }}">
+							<input type="hidden" name="nuclei_action" value="false">
+							{{ nuclei_filter_hidden }}
+							<button type="submit" rel="tooltip" title="" class="btn btn-white btn-round btn-just-icon" data-original-title="False Positive">
+                          	<i class="material-icons">flaky</i>
+                        	</button>
+                        </form>                        
+						<form method="post" action="vd-nuclei" style="display: inline;">
+                        {%csrf_token%}
+						  <input type="hidden" name='domain_search' value="{{ domain_search }}">
+							{{ nuclei_filter_hidden }}
+                          <input type="hidden" name="nuclei_action" value="bump">
+							<button type="submit" rel="tooltip" title="" class="btn btn-white btn-round btn-just-icon" data-original-title="Reschedule">
+                          	<i class="material-icons">model_training</i>
+                        	</button>
+                        </form>
+						<form method="post" action="vd-nuclei" style="display: inline;">
+                        {%csrf_token%}
+						  <input type="hidden" name='domain_search' value="{{ domain_search }}">                        
+						{{ nuclei_filter_hidden }}
+                          <input type="hidden" name="nuclei_action" value="ptime">
+                          {{ nuclei_selector }}
+							<button type="submit" rel="tooltip" title="" class="btn btn-white btn-round btn-just-icon" data-original-title="Set Priority Time">
+                          	<i class="material-icons">date_range</i>
+                        	</button>
+                        </form>
+ </td>
+ <td>
+ <form class="navbar-form" action="vd-nuclei" method="post">
+ 			{%csrf_token%}
+             <span class="bmd-form-group"><div class="input-group no-border">
+			 <input type="hidden" name="nuclei_action" value="filter">
+			 <input type="hidden" name='domain_search' value="{{ domain_search }}">
+			{{ nuclei_filter_hidden }}
+			 <input type="hidden" name="page" value="{{ query_page_prev }}">
+             <button type="submit" class="btn btn-white btn-round btn-just-icon" rel="tooltip" title="" data-original-title="Previous Page">
+             <i class="material-icons">skip_previous</i>
+             <div class="ripple-container"></div>
+             </button>
+             </div></span>
+</form
+</td>
+<td>
+ Page [{{ query_page }}]
+</td>
+<td>
+<form class="navbar-form" action="vd-nuclei" method="post">
+ 			{%csrf_token%}
+             <span class="bmd-form-group"><div class="input-group no-border">
+             <input type="hidden" name='domain_search' value="{{ domain_search }}">
+			 <input type="hidden" name="nuclei_action" value="filter">
+			{{ nuclei_filter_hidden }}
+			 <input type="hidden" name="page" value="{{ query_page_next }}">
+             <button type="submit" class="btn btn-white btn-round btn-just-icon" rel="tooltip" title="" data-original-title="Next Page">
+             <i class="material-icons">skip_next</i>
+             <div class="ripple-container"></div>
+             </button>
+             </div></span>
+</form>-->
+</td>
+</tr>
+</table>
+<!-- End Pager  -->
+
+        <div class="row">
+            <div class="col-md-12">
+              <div class="card">
+                <div class="card-header card-header-primary">
+                  <h4 class="card-title ">Findings List</h4>
+                </div>
+                <div class="card-body">
+                  <div class="table-responsive">
+                    <table class="table">
+                      <thead class="text-primary">
+                        <th>
+                          Finding
+                        </th>
+                        <th>
+                          URL
+                        </th>
+                        <th>
+                          Severity
+                        </th>                        
+                        <th>
+                          Description
+                        </th>
+                        <th>
+                          IP Address
+                        </th>
+                        <th>
+                          Last Seen
+                        </th>
+                        <th>
+                          Count
+                        </th>
+                        <th>
+                          Action
+                        </th>
+                      </thead>
+                      <tbody>
+                        <form  class="navbar-form" action="alerts" method="post">
+                          {%csrf_token%}
+                          <input type="hidden" name='vd_action'>
+                        {% for finding in findings %}
+                        <tr>
+                          <td  >
+                            {{ finding.info.name }}
+                          </td>
+                          <td>
+                            {{ finding.host }}
+                          </td>
+                          <td>
+                            {{ finding.info.severity }}
+                          </td>
+                          <td>
+                            {{ finding.info.description }}
+                          </td>
+                          <td>
+                            {{ finding.ip }}
+                          </td>
+                          <td>
+                            {{ finding.timestamp |slice:":10"}}
+                          </td>    
+                          <td>
+                            {{ finding.counter}}
+                            <!--{{ finding.counter }}-->
+                          </td>  
+                          {% if finding.jira_ticket %}
+                          <td>
+                            <a href={{finding.jira_url}} target="_blank">{{finding.jira_ticket}}</a>
+                                                    
+                          </td>
+                          {% else %}
+                          <td>
+                            <select name="finding_form", class="selectalert">
+                              <option selected="selected" disabled>Select Action</option>
+                              <option value="take_action,{{finding.timestamp}},{{finding.info.name}},{{finding.host}}">Submit</option>
+                              <option value="ignore,{{finding.timestamp}},{{finding.info.name}},{{finding.host}}">Ignore</option>
+                            </select>
+                            <!--<label>Submit </label><input type="checkbox" name="finding_form"  value="ok {{finding}}">
+                            <label>Ignore </label> <input type="checkbox" name="finding_form" value="ignore {{ finding}}">
+                            <label>Submit </label><input type="checkbox" name="finding_form"  value="ok {{finding}}">
+                            <label>Ignore </label> <input type="checkbox" name="finding_form" value="ignore {{ finding}}">-->                            
+                          </td>
+                          {% endif %}
+                        
+                        </tr>
+
+{% endfor %}
+                      </tbody>
+                      <button type="submit">Submit for Action</button><b>{{message}}</b>
+                    </form>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+
+ {% if findings.has_other_pages %}   
+  <ul class="pagination">
+    {%if findings.has_previous %}
+        <li><a href="?page={{findings.previous_page_number }}">Previous</a></li>
+    {% else %}
+        <li class="disabled"><span>Previous</span></li>
+    {% endif %}
+    {% for i in findings.paginator.page_range %}
+      {% if findings.number == i %}
+        <li class="active"><span>{{ i }} <span class="sr-only">(current)</span></span></li>
+      {% else %}
+        <li><a href="?page={{ i }}">{{ i }}</a></li>
+      {% endif %}
+    {% endfor %}
+    {% if findings.has_next %}
+      <li><a href="?page={{ findings.next_page_number }}">Next</a></li>
+    {% else %}
+      <li class="disabled"><span>Next</span></li>
+    {% endif %}
+  </ul>
+{% endif %}        
+<!-- Pager  -->
+ <!--<table width="100%">
+ <tr>
+ <td>
+<form class="navbar-form" action="vd-nuclei" method="post">
+ 			{%csrf_token%}
+             <span class="bmd-form-group"><div class="input-group no-border">
+             <input type="text" name='domain_search' value="{{ domain_search }}" class="form-control" placeholder="New Regex query">
+			 <input type="hidden" name="targets_action" value="filter">
+             <button type="submit" class="btn btn-white btn-round btn-just-icon" rel="tooltip" title="" data-original-title="Search by Regular Expression">
+             <i class="material-icons">search</i>
+             <div class="ripple-container"></div>
+             </button>
+             </div></span>
+</form>
+ </td>
+  <td>
+ Objects: [{{ query_count }}]
+ </td>
+ <td>
+ <form class="navbar-form" action="vd-nuclei" method="post">
+ 			{%csrf_token%}
+             <span class="bmd-form-group"><div class="input-group no-border">
+             <input type="hidden" name='domain_search' value="{{ domain_search }}">
+			 <input type="hidden" name="nuclei_action" value="filter">
+			{{ nuclei_filter_hidden }}
+			 <input type="hidden" name="page" value="{{ query_page_prev }}">
+             <button type="submit" class="btn btn-white btn-round btn-just-icon" rel="tooltip" title="" data-original-title="Previous Page">
+             <i class="material-icons">skip_previous</i>
+             <div class="ripple-container"></div>
+             </button>
+             </div></span>
+</form>
+</td>
+<td>
+ Page [{{ query_page }}]
+</td>
+<td>
+<form class="navbar-form" action="vd-nuclei" method="post">
+ 			{%csrf_token%}
+             <span class="bmd-form-group"><div class="input-group no-border">
+             <input type="hidden" name='domain_search' value="{{ domain_search }}">
+			 <input type="hidden" name="nuclei_action" value="filter">
+			{{ nuclei_filter_hidden }}
+			 <input type="hidden" name="page" value="{{ query_page_next }}">
+             <button type="submit" class="btn btn-white btn-round btn-just-icon" rel="tooltip" title="" data-original-title="Next Page">
+             <i class="material-icons">skip_next</i>
+             <div class="ripple-container"></div>
+             </button>
+             </div></span>
+</form>
+</td>
+</tr>
+</table>-->
+<!-- End Pager  -->
+{% endblock content %}
+
+<!-- Specific Page JS goes HERE  -->
+{% block javascripts %}{% endblock javascripts %}

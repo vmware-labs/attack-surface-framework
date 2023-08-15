@@ -4,7 +4,7 @@ from django.core.management.base import BaseCommand, CommandError
 from django.utils import timezone
 from cProfile import label
 from app.models import vdTarget, vdResult, vdServices, vdInServices, vdRegExp, vdJob, vdNucleiResult
-
+from django.conf import settings
 from os import path
 import sys
 import subprocess
@@ -16,6 +16,9 @@ import json
 from urllib.request import localhost
 from app.tools import *
 from app.nuclei import *
+import pymongo
+import urllib
+from datetime import datetime
 
 #Static and Global Declarations
 HYDRA = re.compile("^(\[.*\])(\[.*\])\s+host:\s+([a-z,0-9,A-Z,\.]*)\s+login:\s+(\S*)\s+password:\s+(.*)$")
@@ -193,6 +196,80 @@ def parser_nuclei_http(PARSER_INPUT, PARSER_OUTPUT):
             debug("Found nothing:"+line)
     return
 
+
+def parser_wpscan_json(PARSER_INPUT, PARSER_OUTPUT):
+    print("Sending to parser for WPScan")
+    #ParseWPscanData(PARSER_INPUT)
+    username = urllib.parse.quote_plus(settings.MONGO_USER)
+    password = urllib.parse.quote_plus(settings.MONGO_PASSWORD)
+    url = settings.MONGO_URL
+    port = settings.MONGO_PORT
+    myclient = pymongo.MongoClient(f"mongodb://{username}:{password}@{url}:{port}")
+    db = myclient["Nuclei"]
+    Collection = db["report"]
+    file_data = json.load(PARSER_INPUT)
+    primaryBulkArr = []
+    result_list =[]
+    severity = 'medium'
+    try:
+        host = file_data['target_url']
+        start_time = file_data['start_time']
+        timestamp = (datetime.fromtimestamp(start_time)).strftime("%Y-%m-%dT%H:%M:%S")
+        if "vulnerabilities" in file_data['version']:
+            for i in file_data['version']['vulnerabilities']:
+                #print(i["title"], data["target_url"])   
+                row = {'host': host, 'jira_created': False, 'verified':False, "ignored":False, 'info':{'name':i['title'], 'description': i['title'], 'severity': severity}, 'matched-at':file_data['target_url'], 'template-id': i['title'], 'timestamp':timestamp }
+                result_list.append(row)
+        if "vulnerabilities" in file_data["main_theme"]:
+            for i in file_data["main_theme"]["vulnerabilities"]:
+                row = {'host': host, 'jira_created': False, 'verified':False, "ignored":False, 'info':{'name':i['title'], 'description': i['title'], 'severity': severity}, 'matched-at':file_data['main_theme']['location'], 'template-id': i['title'], 'timestamp':timestamp }
+                result_list.append(row) 
+        for i in file_data["plugins"]:
+            if "vulnerabilities" in file_data["plugins"][i]:
+                    for j in file_data["plugins"][i]["vulnerabilities"]:
+                        if "title" in j:
+                            row = {'host': host, 'jira_created': False, 'verified':False, "ignored":False, 'info':{'name':j['title'], 'description': j['title'], 'severity': severity}, 'matched-at':file_data["plugins"][i]['location'], 'template-id': j['title'], 'timestamp':timestamp }
+                            result_list.append(row) 
+    except Exception as e:
+        print("error in parsing WPscan report:", str(e))
+        pass
+        
+    for x in result_list:
+        primaryBulkArr.append(pymongo.UpdateOne({"template-id": x['template-id'], 'host':x['host'], 'matched-at':x['matched-at']}, {'$set':x, '$inc':{'counter':1}}, upsert=True))
+    if len(primaryBulkArr)> 0:
+        Collection.bulk_write(primaryBulkArr)
+    else:
+        print("nothing to insert")
+    
+    return 
+    
+
+
+def parser_nuclei_json(PARSER_INPUT, PARSER_OUTPUT):
+    username = urllib.parse.quote_plus(settings.MONGO_USER)
+    password = urllib.parse.quote_plus(settings.MONGO_PASSWORD)
+    url = settings.MONGO_URL
+    port = settings.MONGO_PORT
+    myclient = pymongo.MongoClient(f"mongodb://{username}:{password}@{url}:{port}")
+    db = myclient["Nuclei"]
+    Collection = db["report"]
+    file_data = json.load(PARSER_INPUT)
+    primaryBulkArr = []
+    
+    for index,x in enumerate(file_data):
+        if Collection.count_documents({"template-id": x['template-id'], 'host': x['host'], 'matched-at':x['matched-at']}) < 1:
+            x.update({'jira_created':False, 'verified':False, 'ignored':False})
+            primaryBulkArr.append(pymongo.UpdateOne({"template-id": x['template-id'], 'host':x['host'], 'matched-at':x['matched-at']}, {'$set':x, '$inc':{'counter':1}}, upsert=True))
+        else:
+            primaryBulkArr.append(pymongo.UpdateOne({"template-id": x['template-id'], 'host':x['host'], 'matched-at':x['matched-at']}, {'$set':x, '$inc':{'counter':1}}, upsert=True))
+    if len(primaryBulkArr)> 0:
+        Collection.bulk_write(primaryBulkArr)
+    else:
+        print("nothing to insert")
+    return 
+    
+
+
 def parser_nuclei_network(PARSER_INPUT, PARSER_OUTPUT):
     #Although you can import them from VIEWS, in this particular case, we need to match all over the string,
     #and VIEWS uses it for autodetectType with EXACT MATCH, so removing ^ and $ do the trick
@@ -367,7 +444,7 @@ def parser_nuclei_onlyalert(PARSER_INPUT, PARSER_OUTPUT):
 
 
 #Here is the global declaration of parsers, functions can be duplicated
-action={'default':parser_default, 'patator.ssh':parser_patator_ssh, 'patator.rdp':parser_patator_rdp, 'patator.ftp':parser_patator_ftp, 'patator.telnet':parser_patator_telnet, 'hydra.ftp':parser_hydra_ftp, 'hydra.telnet':parser_hydra_telnet, 'nuclei.http':parser_nuclei_http, 'nuclei.network':parser_nuclei_network, 'nuclei':parser_nuclei, 'nuclei.onlyalert':parser_nuclei_onlyalert, 'nuclei.waf':parser_nuclei_waf}
+action={'default':parser_default, 'patator.ssh':parser_patator_ssh, 'patator.rdp':parser_patator_rdp, 'patator.ftp':parser_patator_ftp, 'patator.telnet':parser_patator_telnet, 'hydra.ftp':parser_hydra_ftp, 'hydra.telnet':parser_hydra_telnet, 'nuclei.http':parser_nuclei_http, 'nuclei.network':parser_nuclei_network, 'nuclei':parser_nuclei, 'nuclei.onlyalert':parser_nuclei_onlyalert, 'nuclei.waf':parser_nuclei_waf, 'nuclei.json':parser_nuclei_json, 'wpscan.json':parser_wpscan_json}
 
 def parseLines(PARSER_INPUT, JobInput, parser):
     if JobInput == "inservices":
@@ -399,6 +476,7 @@ class Command(BaseCommand):
         PARSER_DEBUG = kwargs['debug']
         
         debug(str(kwargs)+"\n")
+        print((str(kwargs)+"\n"))
        
         if kwargs['parser'] not in action:
             PARSER_DEBUG = True
@@ -407,6 +485,7 @@ class Command(BaseCommand):
         
         if "JobID:" in kwargs['output']:
             JobID = kwargs['output'].split("JobID:")[1]
+            print("Requested to parse output from JobID:"+JobID+"\n")
             debug("Requested to parse output from JobID:"+JobID+"\n")
         else:
             debug("You has to specify --output JobID:Id, and ID has to be valid\n")
@@ -415,7 +494,7 @@ class Command(BaseCommand):
         try:
             Job = vdJob.objects.filter(id = JobID)[0]
         except Exception as e:
-            debug("There was an error looking for JobID"+JobID+"\n")
+            debug("There was an error looking for JobID:"+JobID+"\n")
             sys.exit()
         debug("Dump:"+str(Job.input)+":Dump\n")
         if kwargs['input'] != "stdin":

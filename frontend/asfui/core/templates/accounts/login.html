@@ -1,36 +1,52 @@
-{% extends "layouts/base.html" %}
+<head>
 
-{% block title %} Login {% endblock %} 
+  <meta charset="utf-8" />
+  <link rel="apple-touch-icon" sizes="76x76" href="/static/assets/img/apple-icon.png">
+  <link rel="icon" type="image/png" href="/static/assets/img/favicon.png">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+  <title>
+   Dashboard Django - {% block title %}{% endblock %} | Attack Surface Framework
+  </title>
 
+  <meta content='width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0, shrink-to-fit=no' name='viewport' />
+  <!--     Fonts and icons     -->
+  <link rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700|Roboto+Slab:400,700|Material+Icons" />
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/latest/css/font-awesome.min.css">
+  <!-- CSS Files -->
+  <link href="/static/assets/css/material-dashboard.css?v=2.1.1" rel="stylesheet" />
+  <!-- CSS Just for demo purpose, don't include it in your project -->
+<!--   <link href="/static/assets/demo/demo.css" rel="stylesheet" /> -->
+
+<style>
+  html {
+    padding: 0;
+    margin: 0;
+    }
+</style>
+  <!-- Specific Page CSS goes HERE  -->
+
+</head>
+
+{% load i18n %}
+{% load socialaccount %}
+<body>
 <!-- Specific Page CSS goes HERE  -->
-{% block stylesheets %}{% endblock stylesheets %}
-
-{% block content %}
-
-  <div class="row">
-    <div class="col-md-5">
-      <div class="card">
-        <div class="card-header card-header-primary">
-          <h4 class="card-title">
-            Login
-          </h4>
-        </div>
-        <div class="card-body">
+        <div class="login-box">
 
           <h6 class="card-category">
               {% if msg %}
                 <span class="text-danger">{{ msg }}</span>
               {% else %}
-                  Use credentials from initial setup
+                  <h3>Attack Surface Framework</h3>
               {% endif %}  
           </h6>
           
           <br />
-
+      
           <form role="form" method="post" action="">
-              
-            {% csrf_token %} 
 
+            {% csrf_token %} 
+            {% if  settings.LOGIN_FORM %}
             <div class="row">
               <div class="col-md-12">
                 <div class="form-group">
@@ -52,23 +68,36 @@
             </div>
 
             <br />
-
-            <button type="submit" name="login" class="btn btn-primary pull-left">Login</button>
-
-            &nbsp; &nbsp; 
-            <span class="pull-right">
-              Don't have an account? <a href="{% url 'register' %}" class="text-primary">Create</a>
-            </span>
+            
+            <button type="submit" name="login" class="social-button" id="password-connect"><span>Login With Password</span></button>
+            {% endif %}
 
             <div class="clearfix"></div>
-
+          
           </form>
-        </div>
-      </div>
-    </div>
-  </div>
+          
 
-{% endblock content %}
+          <!--GOOGLE SOCIAL AUTHENTICATION-->
+          {% if  settings.SOCIAL_AUTH_GOOGLE_ENABLED %}
+            <a href="{% provider_login_url 'google'%}?next=/" class="social-button" id="google-connect"><span>Continue with Google</span></a>
+          {% endif %}
+          <br>
+           <!--SAML2 AUTHENTICATION-->
+          {% if settings.SOCIAL_SAML2_ENABLED %}
+          
+            <a href="/saml2/login/" class="social-button" id="sso-connect"><span>Continue with SSO</span></a>
+          {% endif %}
+
+          {% if  settings.SOCIAL_AUTH_GITHUB_ENABLED %}
+            <a href="{% provider_login_url 'github'%}?next=/" class="social-button" id="github-connect"><span>Continue with Github</span></a>
+          {% endif %}
+
+          
+        </div>
+    
+</div>
+
+</body>
 
 <!-- Specific Page JS goes HERE  -->
 {% block javascripts %}{% endblock javascripts %}
