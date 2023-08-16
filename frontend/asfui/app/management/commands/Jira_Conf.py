@@ -29,7 +29,7 @@ def create_jira(finding_dict):
         description = description+"\n\n*Hosts:*\n"+str(finding_dict["host"] or 'None')
     if "extracted-results" in finding_dict:
         description = description+"\n\n*Extracted Results:*\n"+"\n".join(str(e) for e in (finding_dict["extracted-results"] or []))
-    new_issue = jira.create_issue(project='STAN', summary=summary, description=description, issuetype={'name': 'Bug'}, priority={'name':severity[finding_dict["info"]["severity"]]})
+    new_issue = jira.create_issue(project=settings.JIRA_PROJECT, summary=summary, description=description, issuetype={'name': 'Bug'}, priority={'name':severity[finding_dict["info"]["severity"]]})
     print(new_issue)
     return str(new_issue)
     

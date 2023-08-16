@@ -26,12 +26,29 @@ Latest version of Subfinder installed, for instructions see https://github.com/p
 
 As root
 
-1. `git clone https://github.com/vmware-labs/attack-surface-framework.git /opt/asf`
-2. `cd /opt/asf/`
-3. Run `./setup.sh`
-4. Assign youruser, email and yourpass
+```
+git clone https://github.com/vmware-labs/attack-surface-framework.git /opt/asf
+cd /opt/asf/
+// edit the file backup.env.prod and copy it to .env.prod
+./setup.sh
+//Assign youruser, email and yourpass. 
+Once the installation is completed ASF will be available as a service on http://127.0.0.1:2021
+```
 
-Once the installation is completed ASF will be available as a service on `http://127.0.0.1:2021`
+### Setting Social Authentication Or SSO. 
+
+1. Enable the required Social Authentication in `.env.prod`
+2. Acquire required tokens from the the social authentication providers. 
+3. Login to ASF Django admin at http://127.0.0.1:2021/admin and add the social application. 
+4. Edit `frontend/asfui/core/settings.py` to modify authentication settings and authorizations. 
+
+
+### Setting Ticketing with Jira
+
+1. Set `JIRA_ENABLED=True` in `.env.prod`
+2. Provide all Jira configuration details, Project Key and Token. 
+3. Map the priority/Severity setting in `JIRA_SEVERITY` as a dictionary. 
+4. This will create tickets for alerts submitted on `http://127.0.0.1:2021/alerts` page
 
 ### Security
 

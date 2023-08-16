@@ -35,6 +35,7 @@ env = environ.Env(
     JIRA_USER=(str, ''),
     JIRA_SEVERITY=(str, ''),   
     JIRA_TICKET_CLOSE=(str,''),
+    JIRA_PROJECT=(str,''),
     
     SOCIAL_SAML2_ENABLED = (bool, True),
     SAML2_ASF_URL=(str,'http://127.0.0.1:8000'),
@@ -68,6 +69,7 @@ JIRA_URL=env('JIRA_URL')
 JIRA_USER=env('JIRA_USER')
 JIRA_SEVERITY=env.json('JIRA_SEVERITY')
 JIRA_TICKET_CLOSE=env('JIRA_TICKET_CLOSE')
+JIRA_PROJECT=env('JIRA_PROJECT')
 
 SOCIAL_SAML2_ENABLED = env("SOCIAL_SAML2_ENABLED")
 SAML2_ASF_URL=env('SAML2_ASF_URL')
