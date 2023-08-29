@@ -1,0 +1,6 @@
+[console_scripts]
+make_metadata=saml2.tools.make_metadata:main
+mdexport=saml2.tools.mdexport:main
+merge_metadata=saml2.tools.merge_metadata:main
+parse_xsd2=saml2.tools.parse_xsd2:main
+

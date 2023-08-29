@@ -57,7 +57,6 @@ SOCIAL_AUTH_GOOGLE_ENABLED = env("SOCIAL_AUTH_GOOGLE_ENABLED")
 
 SOCIAL_AUTH_GITHUB_ENABLED = env("SOCIAL_AUTH_GITHUB_ENABLED")
 ALLOWED_HOSTS=env.list("ALLOWED_HOSTS")
-
 MONGO_USER=env('MONGO_USER')
 MONGO_PASSWORD=env('MONGO_PASSWORD')
 MONGO_URL=env('MONGO_URL')
@@ -178,8 +177,9 @@ AUTH_PASSWORD_VALIDATORS = [
 # SOCIAL AUTH IMPLEMENTATION - GOOGLE
 if SOCIAL_AUTH_GOOGLE_ENABLED:
     SOCIALACCOUNT_STORE_TOKENS=True
-    SITE_ID = 2
+    SITE_ID = 1
     INSTALLED_APPS += ('allauth.socialaccount.providers.google',)
+    print(INSTALLED_APPS)
     AUTHENTICATION_BACKENDS = (
     'django.contrib.auth.backends.ModelBackend',
     'allauth.account.auth_backends.AuthenticationBackend',

@@ -1,6 +1,16 @@
 #!/bin/bash
 # Needs to be run in kali linux - not tested on others
 # Install Graylog
+
+echo "Have you made sure to copy backup.env.prod file to .env.prod and made necessary changes. If not please exit now and do it before installing (y/n)?"
+read envsetupdone
+
+if ! [ $envsetupdone == "y" ]
+then 
+	exit 1
+fi
+
+
 apt update && apt install -y imagemagick python3-venv psmisc psutils xmlsec1 nmap curl wget tcpdump docker.io docker-compose python3-pip ca-certificates apt-transport-https
 git clone https://github.com/projectdiscovery/nuclei-templates.git /home/nuclei-templates
 #cp -R /opt/asf/tools/graylog /
