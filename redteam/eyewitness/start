@@ -124,8 +124,8 @@ EOF
     kubectl delete pod eyewitness-$DATE_STAMP
 else
     #echo "executing docker" >> /var/log/eyewitness.log
-    echo docker run --rm -v $JOB_OUTPUT_FOLDER/:/tmp/EyeWitness/ m4ch1n3s/eyewitness --web --timeout 120 -f /tmp/EyeWitness/app.input --results 300 --no-prompt 2>&1 \> "$JOB_OUTPUT_FOLDER/app.log"
-    docker run --rm -v $JOB_OUTPUT_FOLDER/:/tmp/EyeWitness/ m4ch1n3s/eyewitness --web --timeout 120 -f /tmp/EyeWitness/app.input --results 300 --no-prompt 2>&1 > "$JOB_OUTPUT_FOLDER/app.log" &
+    echo docker run --rm -v $JOB_OUTPUT_FOLDER/:/tmp/EyeWitness/ secsi/eyewitness --web --timeout 120 -f /tmp/EyeWitness/app.input --results 300 --no-prompt 2>&1 \> "$JOB_OUTPUT_FOLDER/app.log"
+    docker run --rm -v $JOB_OUTPUT_FOLDER/:/tmp/EyeWitness/ secsi/eyewitness --web --timeout 120 -f /tmp/EyeWitness/app.input --results 300 --no-prompt 2>&1 > "$JOB_OUTPUT_FOLDER/app.log" &
 fi
 
 JOB_PID=$!

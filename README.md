@@ -16,8 +16,6 @@ ASF is a breed of open source projects leveraging a powerful arsenal of tools wr
 
 Latest version of Kali Linux (tested on 64 bits) - https://kali.org/get-kali/
 
-Latest version of Subfinder installed, for instructions see https://github.com/projectdiscovery/subfinder
-
 16 GB of RAM at least
 
 1 TB HD - XFS filesystem recommended
@@ -26,36 +24,80 @@ Latest version of Subfinder installed, for instructions see https://github.com/p
 
 As root
 
-1. `git clone https://github.com/vmware-labs/attack-surface-framework.git /opt/asf`
-2. `cd /opt/asf/`
-3. Run `./setup.sh`
-4. Assign youruser, email and yourpass
+```
+1. git clone https://gitlab.eng.vmware.com/redteam/asfv2.git /opt/asf
+2. cd /opt/asf/
+3. Generate a .env.prod file or move from backup.env.prod and make necessary changes. 
+Run `./setup.sh`
+```
 
-Once the installation is completed ASF will be available as a service on `http://127.0.0.1:2021`
+MongoDB is required for functioning of alerting or reporting. 
+
+If you choose to run your own mongodb instance you may use the below command
+
+```
+docker run -dp 27017:27017 -v local-mongo:/data/db --name local-mongo --restart=always -e MONGO_INITDB_ROOT_USERNAME=<<>> -e MONGO_INITDB_ROOT_PASSWORD=<<>> mongo
+```
+
+
+And update .env.prod with following details:
+
+```
+MONGO_USER=admin
+MONGO_PASSWORD=
+MONGO_URL=
+MONGO_PORT=27017
+```
+
+
+Once the installation is completed ASF will run as service on port 2021, access by browsing to http://127.0.0.1:2021
+
 
 ### Security
 
 ASF is not meant to be publicly exposed, assuming you install it on a cloud provider or even on a local instance, we recommend to access it using port forwarding through SSH, here is an example:
 
-`ssh -i "key.pem" -L 8080:127.0.0.1:8080 user@yourhost` - For ASF GUI
+`ssh -i "key.pem" -L 2021:127.0.0.1:2021 user@yourhost` - For ASF GUI
 
-`ssh -i "key.pem" -L 9045:127.0.0.1:9045 user@yourhost` - To access Graylog2 Panel
 
 Then open your browser and go to: 
 
-`http://127.0.0.1:8080` - For ASF - user:youruser pass:yourpass (provided in initial setup)
+`http://127.0.0.1:2021` - For ASF - user:youruser pass:yourpass (provided in initial setup)
 
-`https://127.0.0.1:9045` - For Graylog2 - user:admin pass:admin #Change it in /graylog/docker-compose.yaml
 
-Graylog2 requires a few steps to start receiving logs from ASF: 
+###### Social Login 
 
-Once logged in, go to System/"Content Packs" and import the Content Pack located at /opt/asf/tools/graylog/content_pack_ASF.json, click on the "Upload" button and you should see "Basic" reflected in the "Select Content Packs" section, click on "Basic", make sure the "ASF" radio button is selected and hit the "Apply content" button, this will create the Global input to parse JSON logs and related extractors. 
+Additionally you may configure social login by enabling the right social login feature in .env.prod 
 
-![Graylog2 Inputs Example](images/Graylog_content_pack.jpg)
+```
+#LOGIN CONFIGURATIONS
+LOGIN_FORM=True
+SOCIAL_AUTH_GOOGLE_ENABLED=True (False)
+SOCIAL_AUTH_GITHUB_ENABLED=True (False)
+DJANGO_SAML2_ENABLED=True (False)
+```
+Navigating to admin panel http://127.0.0.1:2021/admin to add the social app. 
 
-Now you are ready to receive logs from ASF and setup your streams / alerts / dasboards ! 
+`Note that if social login is enabled and not configured in admin panel ASF will not display the login page - to revert simply disable the Social Login in .env.prod`
 
-More info @ https://docs.graylog.org/en/4.1/ 
+
+###### Jira Integration
+
+ASF support Jira integration and ticketing to enable Jira set the following values in .env.prod:
+
+```
+JIRA_ENABLED=True
+JIRA_TOKEN=
+JIRA_URL=
+JIRA_USER=
+JIRA_SEVERITY={"info":"Lowest","low":"Low","medium":"Medium","high":"High","critical":"Highest"}
+JIRA_PROJECT=
+```
+
+
+###### WPScan Integration
+
+To use Wordpress Scan in Red team modules insert WPScan API token in line #7 of `redteam/wpscan/wpscan.sh`
 
 ### Documentation
 
@@ -148,6 +190,8 @@ https://nxlog.co/products/nxlog-community-edition
 
 https://www.docker.com/
 
-## Presented at Blackhat Arsenal
+## Presented at 
+### Blackhat Arsenal - https://www.blackhat.com/us-21/arsenal/schedule/index.html#vdoberman-24096
 
-https://www.blackhat.com/us-21/arsenal/schedule/index.html#vdoberman-24096
+### Defcon Demolabs - https://forum.defcon.org/node/246317
+

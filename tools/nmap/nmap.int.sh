@@ -78,3 +78,6 @@ echo "Finished"
 #UnComment for production
 #trap
 #rm -rf "/tmp/$DELTAD.madnmap.int/"
+#cd /opt/asf/front/asfui
+#. bin/activate
+#python3 manage.py savetodb --service nmap-int

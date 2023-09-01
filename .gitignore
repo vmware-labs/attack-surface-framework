@@ -1,0 +1,16 @@
+bin/*
+frontend/asfui/include/*
+frontend/asfui/bin/*
+frontend/asfui/db.sqlite3
+frontend/asfui/lib
+frontend/asfui/lib64
+frontend/asfui/ip.txt
+frontend/logs/*
+__pycache__/
+*.log
+*.pyc
+frontend/asfui/subs.txt
+frontend/asfui/*.txt
+!frontend/asfui/requirements.txt
+nohup.out
+.env.prod

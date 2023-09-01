@@ -14,6 +14,7 @@ urlpatterns = [
     path('vd-redteam', views.redteam),
     path('vd-nuclei', views.nuclei),
     path('vd-nuclei-templates', views.nucleitemplates),
+    path('alerts', views.alertspage),
 #    path('vd-dashboard', views.dashboard),
     
     #Internal
