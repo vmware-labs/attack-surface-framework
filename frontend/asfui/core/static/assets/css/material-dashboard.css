@@ -18889,13 +18889,11 @@ Copyright (c) 2015 Daniel Eden
 
 
 #facebook-connect {
-  background: rgb(255, 255, 255) url('https://raw.githubusercontent.com/eswarasai/social-login/master/img/facebook.svg?sanitize=true') no-repeat scroll 5px 0px / 30px 50px padding-box border-box;
   border: 1px solid rgb(60, 90, 154);
 }
 
 #facebook-connect:hover {
   border-color: rgb(60, 90, 154);
-  background: rgb(60, 90, 154) url('https://raw.githubusercontent.com/eswarasai/social-login/master/img/facebook-white.svg?sanitize=true') no-repeat scroll 5px 0px / 30px 50px padding-box border-box;
   -webkit-transition: all .8s ease-out;
   -moz-transition: all .3s ease;
   -ms-transition: all .3s ease;
@@ -18928,13 +18926,11 @@ Copyright (c) 2015 Daniel Eden
 }
 
 #google-connect {
-  background: rgb(255, 255, 255) url('https://raw.githubusercontent.com/eswarasai/social-login/master/img/google-plus.png') no-repeat scroll 5px 0px / 50px 50px padding-box border-box;
   border: 1px solid rgb(220, 74, 61);
 }
 
 #google-connect:hover {
   border-color: rgb(220, 74, 61);
-  background: rgb(220, 74, 61) url('https://raw.githubusercontent.com/eswarasai/social-login/master/img/google-plus-white.png') no-repeat scroll 5px 0px / 50px 50px padding-box border-box;
   -webkit-transition: all .8s ease-out;
   -moz-transition: all .3s ease;
   -ms-transition: all .3s ease;
@@ -18967,13 +18963,11 @@ Copyright (c) 2015 Daniel Eden
 }
 
 #twitter-connect {
-  background: rgb(255, 255, 255) url('https://raw.githubusercontent.com/eswarasai/social-login/master/img/twitter.png') no-repeat scroll 5px 1px / 45px 45px padding-box border-box;
   border: 1px solid rgb(85, 172, 238);
 }
 
 #twitter-connect:hover {
   border-color: rgb(85, 172, 238);
-  background: rgb(85, 172, 238) url('https://raw.githubusercontent.com/eswarasai/social-login/master/img/twitter-white.png') no-repeat scroll 5px 1px / 45px 45px padding-box border-box;
   -webkit-transition: all .8s ease-out;
   -moz-transition: all .3s ease;
   -ms-transition: all .3s ease;
@@ -19006,13 +19000,11 @@ Copyright (c) 2015 Daniel Eden
 }
 
 #github-connect {
-  background: rgb(255, 255, 255) url('../img/github-mark.svg?sanitize=true') no-repeat scroll 13px 5px / 32px 36px padding-box border-box;
   border: 1px solid rgb(0, 119, 181);
 }
 
 #github-connect:hover {
   border-color: rgb(0, 119, 181);
-  background: rgb(0, 119, 181) url('../img/github-mark.svg?sanitize=true') no-repeat scroll 13px 5px / 28px 28px padding-box border-box;
   -webkit-transition: all .8s ease-out;
   -moz-transition: all .3s ease;
   -ms-transition: all .3s ease;
@@ -19046,13 +19038,11 @@ Copyright (c) 2015 Daniel Eden
 
 
 #sso-connect {
-  background: rgb(255, 255, 255) url('../img/sso.png') no-repeat scroll 5px 0px / 40px 48px padding-box border-box;
   border: 1px solid rgb(60, 90, 154);
 }
 
 #sso-connect:hover {
   border-color: rgb(60, 90, 154);
-  background: rgb(60, 90, 154) url('../img/sso.png') no-repeat scroll 5px 0px / 40px 40px padding-box border-box;
   -webkit-transition: all .8s ease-out;
   -moz-transition: all .3s ease;
   -ms-transition: all .3s ease;
@@ -19085,13 +19075,11 @@ Copyright (c) 2015 Daniel Eden
 }
 
 #password-connect {
-  background: rgb(255, 255, 255) url('../img/login-password.svg') no-repeat scroll 5px 4px / 40px 40px padding-box border-box;
   border: 1px solid rgb(220, 74, 61);
 }
 
 #password-connect:hover {
   border-color: rgb(220, 74, 61);
-  background: rgb(220, 74, 61) url('../img/login-password.svg') no-repeat scroll 5px 4px / 40px 36px padding-box border-box;
   -webkit-transition: all .8s ease-out;
   -moz-transition: all .3s ease;
   -ms-transition: all .3s ease;

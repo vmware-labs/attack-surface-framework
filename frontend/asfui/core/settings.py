@@ -41,6 +41,7 @@ env = environ.Env(
     SAML2_ASF_URL=(str,''),
     SAML2_SSO_URL=(str,''),
     
+    WPScan_Default_Severity=(str,'medium'),
     
 )
 
@@ -74,6 +75,8 @@ JIRA_PROJECT=env('JIRA_PROJECT')
 SOCIAL_SAML2_ENABLED = env("SOCIAL_SAML2_ENABLED")
 SAML2_ASF_URL=env('SAML2_ASF_URL')
 SAML2_SSO_URL=env('SAML2_SSO_URL')
+
+WPScan_Default_Severity=env('WPScan_Default_Severity')
 
     
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
@@ -247,8 +250,8 @@ if SOCIAL_SAML2_ENABLED:
         }
     
     from os import path
-    ASF_URL = "http://127.0.0.1:8000"
-    SSO_URL = 'https://myvmware.workspaceair.com'
+    ASF_URL = SAML2_ASF_URL
+    SSO_URL = SAML2_SSO_URL
     
     SAML_CONFIG =  {
         # full path to the xmlsec1 binary programm

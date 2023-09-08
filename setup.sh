@@ -56,13 +56,13 @@ read localdb
 
 if [ $localdb == "y" ]
 then 
-	echo "Username for DB" 
+	echo "This will run a local MongoDB container"
+	echo "Username for MongoDB:" 
 	read mdb_user
 	echo "MONGO_USER=$mdb_user" | tee -a .env.prod
 	echo "Password:" 
 	read -s mdb_pass
 	echo "MONGO_USER=$mdb_pass" | tee -a .env.prod
-	echo "MONGO_URL=10.188.52.96\nMONGO_PORT=27017" | tee -a .env.prod
 	sudo docker run -dp 27017:27017 -v local-mongo:/data/db --name local-mongo --restart=always -e MONGO_INITDB_ROOT_USERNAME=$mdb_user -e MONGO_INITDB_ROOT_PASSWORD=$mdb_pass mongo 
 
 
@@ -84,7 +84,7 @@ then
 
 elif [ $localdb == "d" ]
 then
-	echo "Going with default make sure to enter details in the .env.prod file " 
+	echo "Going with default settings make sure to enter details in the .env.prod file. If you have not done so, please exit and do before running setup again." 
 fi
 
 

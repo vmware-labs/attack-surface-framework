@@ -83,7 +83,7 @@ Navigating to admin panel http://127.0.0.1:2021/admin to add the social app.
 
 ###### Jira Integration
 
-ASF support Jira integration and ticketing to enable Jira set the following values in .env.prod:
+To enable Jira integration and ticketing, ASF supports setting the following values in the .env.prod file: 
 
 ```
 JIRA_ENABLED=True

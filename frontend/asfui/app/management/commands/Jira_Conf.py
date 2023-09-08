@@ -5,6 +5,7 @@ import urllib.parse
 from django.conf import settings
 from jira import JIRA
 import urllib
+from app.tools import *
 
 user = settings.JIRA_USER
 apikey = settings.JIRA_TOKEN
@@ -30,7 +31,7 @@ def create_jira(finding_dict):
     if "extracted-results" in finding_dict:
         description = description+"\n\n*Extracted Results:*\n"+"\n".join(str(e) for e in (finding_dict["extracted-results"] or []))
     new_issue = jira.create_issue(project= settings.JIRA_PROJECT, summary=summary, description=description, issuetype={'name': 'Bug'}, priority={'name':severity[finding_dict["info"]["severity"]]})
-    print(new_issue)
+    debug(new_issue)
     return str(new_issue)
     
 def jira_status(ticket_num):
@@ -47,7 +48,6 @@ def create_issue(query):
         client = pymongo.MongoClient(f"mongodb://{username}:{password}@{url}:{port}")
         myDB = client["Nuclei"]
         mycol = myDB["report"]
-        #myquery = {"template-id": "cname-fingerprint", "matched-at": "aria.vmware.com"}
         mydoc = mycol.find(query)
         for doc in mydoc:
             ticket_num = create_jira(doc)
@@ -68,11 +68,11 @@ def ignore_issue(query):
     mycol = myDB["report"]
     mycol.update_many(query, {"$set":{"verified":True, "ignored":True}})
     mycol.count_documents(query)
-    print("ignored issue", query, mycol.count_documents(query))
+    debug("ignored issue", query, mycol.count_documents(query))
 
 def main():
     create_issue()
-    print("issue created")
+    debug("issue created")
 
 if __name__ == "__main__":
     main()
@@ -86,7 +86,7 @@ class Command(BaseCommand):
         try:
             query = {"info.severity":severity}
             create_issue(query)
-            print("insert complete")
+            debug("insert complete")
         except Exception as e:
-            print("insert failed"+ str(e))
+            debug("insert failed"+ str(e))
 

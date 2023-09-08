@@ -198,7 +198,7 @@ def parser_nuclei_http(PARSER_INPUT, PARSER_OUTPUT):
 
 
 def parser_wpscan_json(PARSER_INPUT, PARSER_OUTPUT):
-    print("Sending to parser for WPScan")
+    debug("Sending to parser for WPScan")
     #ParseWPscanData(PARSER_INPUT)
     username = urllib.parse.quote_plus(settings.MONGO_USER)
     password = urllib.parse.quote_plus(settings.MONGO_PASSWORD)
@@ -206,18 +206,17 @@ def parser_wpscan_json(PARSER_INPUT, PARSER_OUTPUT):
     port = settings.MONGO_PORT
     myclient = pymongo.MongoClient(f"mongodb://{username}:{password}@{url}:{port}")
     db = myclient["Nuclei"]
-    Collection = db["report"]
+    collection = db["report"]
     file_data = json.load(PARSER_INPUT)
     primaryBulkArr = []
     result_list =[]
-    severity = 'medium'
+    severity = settings.WPScan_Default_Severity
     try:
         host = file_data['target_url']
         start_time = file_data['start_time']
         timestamp = (datetime.fromtimestamp(start_time)).strftime("%Y-%m-%dT%H:%M:%S")
         if "vulnerabilities" in file_data['version']:
-            for i in file_data['version']['vulnerabilities']:
-                #print(i["title"], data["target_url"])   
+            for i in file_data['version']['vulnerabilities']:  
                 row = {'host': host, 'jira_created': False, 'verified':False, "ignored":False, 'info':{'name':i['title'], 'description': i['title'], 'severity': severity}, 'matched-at':file_data['target_url'], 'template-id': i['title'], 'timestamp':timestamp }
                 result_list.append(row)
         if "vulnerabilities" in file_data["main_theme"]:
@@ -231,15 +230,15 @@ def parser_wpscan_json(PARSER_INPUT, PARSER_OUTPUT):
                             row = {'host': host, 'jira_created': False, 'verified':False, "ignored":False, 'info':{'name':j['title'], 'description': j['title'], 'severity': severity}, 'matched-at':file_data["plugins"][i]['location'], 'template-id': j['title'], 'timestamp':timestamp }
                             result_list.append(row) 
     except Exception as e:
-        print("error in parsing WPscan report:", str(e))
+        debug("error in parsing WPscan report:", str(e))
         pass
         
     for x in result_list:
         primaryBulkArr.append(pymongo.UpdateOne({"template-id": x['template-id'], 'host':x['host'], 'matched-at':x['matched-at']}, {'$set':x, '$inc':{'counter':1}}, upsert=True))
     if len(primaryBulkArr)> 0:
-        Collection.bulk_write(primaryBulkArr)
+        collection.bulk_write(primaryBulkArr)
     else:
-        print("nothing to insert")
+        debug("nothing to insert")
     
     return 
     
@@ -252,20 +251,20 @@ def parser_nuclei_json(PARSER_INPUT, PARSER_OUTPUT):
     port = settings.MONGO_PORT
     myclient = pymongo.MongoClient(f"mongodb://{username}:{password}@{url}:{port}")
     db = myclient["Nuclei"]
-    Collection = db["report"]
+    collection = db["report"]
     file_data = json.load(PARSER_INPUT)
     primaryBulkArr = []
     
     for index,x in enumerate(file_data):
-        if Collection.count_documents({"template-id": x['template-id'], 'host': x['host'], 'matched-at':x['matched-at']}) < 1:
+        if collection.count_documents({"template-id": x['template-id'], 'host': x['host'], 'matched-at':x['matched-at']}) < 1:
             x.update({'jira_created':False, 'verified':False, 'ignored':False})
             primaryBulkArr.append(pymongo.UpdateOne({"template-id": x['template-id'], 'host':x['host'], 'matched-at':x['matched-at']}, {'$set':x, '$inc':{'counter':1}}, upsert=True))
         else:
             primaryBulkArr.append(pymongo.UpdateOne({"template-id": x['template-id'], 'host':x['host'], 'matched-at':x['matched-at']}, {'$set':x, '$inc':{'counter':1}}, upsert=True))
     if len(primaryBulkArr)> 0:
-        Collection.bulk_write(primaryBulkArr)
+        collection.bulk_write(primaryBulkArr)
     else:
-        print("nothing to insert")
+        debug("nothing to insert")
     return 
     
 
@@ -476,7 +475,6 @@ class Command(BaseCommand):
         PARSER_DEBUG = kwargs['debug']
         
         debug(str(kwargs)+"\n")
-        print((str(kwargs)+"\n"))
        
         if kwargs['parser'] not in action:
             PARSER_DEBUG = True
@@ -485,7 +483,6 @@ class Command(BaseCommand):
         
         if "JobID:" in kwargs['output']:
             JobID = kwargs['output'].split("JobID:")[1]
-            print("Requested to parse output from JobID:"+JobID+"\n")
             debug("Requested to parse output from JobID:"+JobID+"\n")
         else:
             debug("You has to specify --output JobID:Id, and ID has to be valid\n")
