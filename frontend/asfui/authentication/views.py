@@ -12,12 +12,12 @@ from django.contrib.auth.models import User
 from django.forms.utils import ErrorList
 from django.http import HttpResponse
 from .forms import LoginForm, SignUpForm
+from django.conf import settings
 
 def login_view(request):
     form = LoginForm(request.POST or None)
-
     msg = None
-
+    lmsg = None
     if request.method == "POST":
 
         if form.is_valid():
@@ -30,9 +30,8 @@ def login_view(request):
             else:    
                 msg = 'Invalid credentials'    
         else:
-            msg = 'Error validating the form'    
-
-    return render(request, "accounts/login.html", {"form": form, "msg" : msg})
+            msg = 'Error validating the form'      
+    return render(request, "accounts/login.html", {"form": form, "msg" : msg, "settings": settings})
 
 def register_user(request):
 

@@ -36,8 +36,8 @@ if ! docker images | grep $IMAGE_NAME
 then echo "Building wpscan..."
 docker pull $IMAGE_NAME
 fi
-echo "/opt/asf/redteam/wpscan/wpscan.sh $JOB_FOLDER/app.input"
-/opt/asf/redteam/wpscan/wpscan.sh "$JOB_FOLDER/app.input" | tee "$JOB_OUTPUT_FOLDER/app.report.txt" >> "$JOB_OUTPUT_FOLDER/app.log" &
+echo "/opt/asf/redteam/wpscan/wpscan.sh $JOB_FOLDER/app.input $1 $JOB_OUTPUT_FOLDER"
+/opt/asf/redteam/wpscan/wpscan.sh "$JOB_FOLDER/app.input" "$1" "$JOB_OUTPUT_FOLDER"| tee "$JOB_OUTPUT_FOLDER/app.report.txt" >> "$JOB_OUTPUT_FOLDER/app.log" &
 
 JOB_PID=$!
 echo $JOB_PID>"$JOB_FOLDER/pid"

@@ -3,13 +3,17 @@ from django.utils.safestring import mark_safe
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, get_object_or_404, redirect
 from django.template import loader
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from django import template
 from django.core.files.storage import FileSystemStorage
 from django.core.management import call_command
 from datetime import date, datetime
 import time
-
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+import pymongo
+from django.conf import settings
+import urllib
+import ast
 from .models import vdTarget, vdInTarget, vdResult, vdServices, vdInServices, vdRegExp, vdJob, vdNucleiResult
 
 from os import path
@@ -29,6 +33,8 @@ from app.metasploitbr import *
 from app.targets import *
 from app.nuclei import *
 from app.discovery import *
+from app.management.commands.Jira_Conf import *
+from bson import json_util
 
 GENERAL_PAGE_SIZE = 50
 
@@ -173,6 +179,91 @@ def targets(request):
 
     html_template = loader.get_template( 'vd-targets.html' )
     return HttpResponse(html_template.render(context, request))
+
+
+
+
+
+@login_required(login_url="/login/")
+def alertspage(request):
+    context = {}
+    context['segment'] = 'alerts'
+    global PARSER_DEBUG
+    PARSER_DEBUG=True
+    debug(request.POST)
+    m_query = {"ignored":False}
+    mongo_username = urllib.parse.quote_plus(settings.MONGO_USER)
+    mongo_password = urllib.parse.quote_plus(settings.MONGO_PASSWORD)
+    mongo_url = settings.MONGO_URL
+    mongo_port = settings.MONGO_PORT
+    mongo_client = pymongo.MongoClient(f"mongodb://{mongo_username}:{mongo_password}@{mongo_url}:{mongo_port}")
+    mongo_db = mongo_client["Nuclei"]
+    mongo_collection = mongo_db["report"]
+    if len(settings.JIRA_TICKET_CLOSE) > 2:
+        docs = mongo_collection.find({})
+        for doc in docs:
+            try:
+                status = jira_status(doc["jira_ticket"])
+                if settings.JIRA_TICKET_CLOSE in str(status):
+                    mongo_collection.delete_one({'_id':doc['_id']})
+            except:
+                pass
+            
+    message = ""
+    if 'vd_action' in request.POST:
+        checked_data = request.POST.getlist('finding_form')
+        for data in checked_data:
+            row = data.split(",")
+            if row[0] == "take_action":
+                query = {"timestamp":row[1], "info.name":row[2], "host":row[3], "jira_created":False, "verified":False}
+                create_issue(query)
+            if row[0] == "ignore":
+                query = {"timestamp":row[1], "info.name":row[2], "host":row[3], "jira_created":False, "verified":False}
+                print(query)
+                ignore_issue(query)
+        message = "Findings submitted for Action"
+    if 'alerts_filter' in request.POST:
+        filter_data = request.POST['alerts_filter_search']
+        m_query = {"ingored":False, "info.name":{"$regex":filter_data}}
+    
+    if 'alerts_download' in request.POST:
+        json_data = json.loads(json_util.dumps(mongo_collection.find(m_query)))
+        response = HttpResponse(json.dumps(json_data))
+        response['Content-Type'] = 'application/force-download'
+        response['Content-Disposition'] = 'attachment; filename=Alerts.json'
+        return response
+        
+        
+    mongo_cursor = list(mongo_collection.find(m_query))
+    print(len(mongo_cursor))
+    page = request.GET.get('page', 1)
+    paginator = Paginator(mongo_cursor, 10)
+    
+    try:
+        findings = paginator.page(page)
+    except PageNotAnInteger:
+        findings = paginator.page(1)
+    except EmptyPage:
+        findings = paginator.page(paginator.num_pages)
+    return render(request, 'alertspage.html', {'findings':findings, 'message':message})
+
+
+    
+    
+
+#Delete a NucleiFinding
+    
+    #html_template = loader.get_template( 'vd-nuclei.html' )
+    #return HttpResponse(html_template.render(context, request))   
+
+
+
+
+
+    
+    
+    
+
 
 @login_required(login_url="/login/")
 def dashboard(request):
@@ -665,7 +756,7 @@ def redteam(request):
         #This function suddnely does much more than detect reports, also pass it trough cmdargs and scheduling, there is no way to split it in other functions
         #Perhaps a proper clear way should be changing the name of this function, populate_info, or retrieve_current_info, or something like that
         NUMERICAL_REGEXP = re.compile("[0-9]*")
-        REPORT_REGEXP = ["**/*.[tT][xX][tT]", "**/*.[hH][tT][mM][lL]*", "**/*.[cC][sS][vV]", "**/*.[nN][mM][aA][pP]"] 
+        REPORT_REGEXP = ["**/*.[tT][xX][tT]", "**/*.[hH][tT][mM][lL]*", "**/*.[cC][sS][vV]", "**/*.[nN][mM][aA][pP]", "**/*.[jJ][sS][oO][nN]"] 
         REPORT_EXCLUDE = ['slice']
         CMDARG_REGEXP = re.compile("\d+\.cmdarg")
         JOBS_FOLDER = "/home/asf/jobs/"

@@ -1,11 +1,11 @@
 #!/bin/bash
 # Needs to be run in kali linux - not tested on others
 # Install Graylog
-apt update && apt install -y imagemagick python3-venv psmisc psutils nmap curl wget tcpdump docker.io docker-compose python3-pip ca-certificates apt-transport-https
+apt update && apt install -y imagemagick python3-venv psmisc psutils xmlsec1 nmap curl wget tcpdump docker.io docker-compose python3-pip ca-certificates apt-transport-https
 git clone https://github.com/projectdiscovery/nuclei-templates.git /home/nuclei-templates
-cp -R /opt/asf/tools/graylog /
-cd /graylog 
-docker-compose up -d
+#cp -R /opt/asf/tools/graylog /
+#cd /graylog 
+#docker-compose up -d
 #Start alertmonitor for sending logs to graylog 
 nohup /opt/asf/tools/alertmonitor/alertmon.sh &
 cd /opt/asf/frontend/asfui
@@ -50,6 +50,45 @@ for file in *
 do
 	cp -v "$file" "/etc/systemd/system/$file" 
 done
+
+echo "Would you like to create a local MongoDB container for storing issues (y/n/d)?" 
+read localdb
+
+if [ $localdb == "y" ]
+then 
+	echo "This will run a local MongoDB container"
+	echo "Username for MongoDB:" 
+	read mdb_user
+	echo "MONGO_USER=$mdb_user" | tee -a .env.prod
+	echo "Password:" 
+	read -s mdb_pass
+	echo "MONGO_USER=$mdb_pass" | tee -a .env.prod
+	sudo docker run -dp 27017:27017 -v local-mongo:/data/db --name local-mongo --restart=always -e MONGO_INITDB_ROOT_USERNAME=$mdb_user -e MONGO_INITDB_ROOT_PASSWORD=$mdb_pass mongo 
+
+
+
+elif [ $localdb == "n" ]
+then
+	echo "MongoDB Host:" 
+	read mdb_url
+	echo "MONGO_URL=$mdb_url" | tee -a .env.prod
+	echo "MongoDB Port:" 
+	read mdb_port
+	echo "MONGO_URL=$mdb_port" | tee -a .env.prod
+	echo "Username for DB"
+	read mdb_user
+	echo "MONGO_USER=$mdb_user" | tee -a .env.prod
+	echo "Password:" 
+	read -s mdb_pass
+	echo "MONGO_USER=$mdb_pass" | tee -a .env.prod
+
+elif [ $localdb == "d" ]
+then
+	echo "Going with default settings make sure to enter details in the .env.prod file. If you have not done so, please exit and do before running setup again." 
+fi
+
+
+
 apt install -y nginx
 rm -f /etc/nginx/sites-enabled/default /etc/nginx/sites-available/default
 cp -v /opt/asf/tools/nginx/sites-enabled/asf /etc/nginx/sites-enabled/
