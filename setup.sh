@@ -6,7 +6,8 @@ git clone https://github.com/projectdiscovery/nuclei-templates.git /home/nuclei-
 #cp -R /opt/asf/tools/graylog /
 #cd /graylog 
 #docker-compose up -d
-#Start alertmonitor for sending logs to graylog 
+mkdir -p /opt/asf/frontend/asfui/logs # create logs directory
+#Start alertmonitor for sending logs to graylog
 nohup /opt/asf/tools/alertmonitor/alertmon.sh &
 cd /opt/asf/frontend/asfui
 python3 -m venv ./
@@ -100,5 +101,9 @@ systemctl enable asf
 systemctl enable cleanuptrash.timer
 systemctl start cleanuptrash.timer
 systemctl restart nginx
+
+# Running systemctl restart ASF service to apply and reflect any changes made during the setup (via setup.sh) in the running instance.
+# This step ensures that all configurations, updates, or modifications performed are loaded and utilized by ASF in real-time.
+systemctl restart asf
 echo "A.S.F. Running on: \
 http://127.0.0.1:2021"
