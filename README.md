@@ -22,38 +22,78 @@ Latest version of Kali Linux (tested on 64 bits) - https://kali.org/get-kali/
 
 ### Build & Run
 
-As root
+Execute the following steps as the `root` user to install and run the Attack Surface Framework.
 
-```
-1. git clone https://gitlab.eng.vmware.com/redteam/asfv2.git /opt/asf
-2. cd /opt/asf/
-3. Generate a .env.prod file or move from backup.env.prod and make necessary changes. 
-Run `./setup.sh`
-```
+1. Clone the Repository
+   - Clone the ASF repository to your `/opt/` directory.
+   ```
+   git clone https://github.com/vmware-labs/attack-surface-framework.git /opt/asf
+   ```
+2. cd `/opt/asf/`
+3. Configure Environment File 
+   - Create a `.env.prod` file in the project directory. This is crucial for `setup.sh` to run properly.
 
-MongoDB is required for functioning of alerting or reporting. 
+      **Note**: You can generate a `.env.prod` file or copy from `backup.env.prod`, making the necessary changes to adapt to your environment.
+   - Example structure of `.env.prod`:
+    
+      ```
+       # Django settings, don't enable debug on production!
+       DEBUG=True
+       DJANGO_ADMIN_ENABLED=True
+    
+       #LOGIN CONFIGURATIONS
+       LOGIN_FORM=True
+       SOCIAL_AUTH_GOOGLE_ENABLED=False
+       SOCIAL_AUTH_GITHUB_ENABLED=False
+    
+    
+       DJANGO_SAML2_ENABLED=False  #Enable Social Authenticatio with Google. 
+       SAML2_SSO_URL=https://saml2.local
+       SAML2_ASF_URL=https://atttacksurfaceframework.local
+    
+    
+    
+       ALLOWED_HOSTS=*,localhost, config('SERVER', default='127.0.0.1')
+    
+    
+       MONGO_USER=admin
+       MONGO_PASSWORD=
+       MONGO_URL=
+       MONGO_PORT=27017
+    
+    
+       JIRA_ENABLED=False
+       JIRA_TOKEN=
+       JIRA_URL=
+       JIRA_USER=
+       JIRA_SEVERITY={"info":"Lowest","low":"Low","medium":"Medium","high":"High","critical":"Highest"}
+       JIRA_PROJECT=""
+       WPScan_Default_Severity=medium
+       ```
 
-If you choose to run your own mongodb instance you may use the below command
+      - Note: MongoDB is necessary for the alerting or reporting functions of ASF. 
 
-```
-docker run -dp 27017:27017 -v local-mongo:/data/db --name local-mongo --restart=always -e MONGO_INITDB_ROOT_USERNAME=<<>> -e MONGO_INITDB_ROOT_PASSWORD=<<>> mongo
-```
+          - If you opt to run your MongoDB instance, use the following command:
+
+          ```
+          docker run -dp 27017:27017 -v local-mongo:/data/db --name local-mongo --restart=always -e MONGO_INITDB_ROOT_USERNAME=<<>> -e MONGO_INITDB_ROOT_PASSWORD=<<>> mongo
+          ```
+
+          - And update `.env.prod` with following details:
+
+          ```
+          MONGO_USER=admin
+          MONGO_PASSWORD=
+          MONGO_URL=
+          MONGO_PORT=27017
+          ```
+   
+4. Run `./setup.sh`
 
 
-And update .env.prod with following details:
+For Local Kali Linux Environment: Navigate to http://127.0.0.1:2021 in your web browser to access ASF
 
-```
-MONGO_USER=admin
-MONGO_PASSWORD=
-MONGO_URL=
-MONGO_PORT=27017
-```
-
-
-Once the installation is completed ASF will run as service on port 2021, access by browsing to http://127.0.0.1:2021
-
-
-### Security
+### Secure Access to ASF
 
 ASF is not meant to be publicly exposed, assuming you install it on a cloud provider or even on a local instance, we recommend to access it using port forwarding through SSH, here is an example:
 
@@ -64,6 +104,7 @@ Then open your browser and go to:
 
 `http://127.0.0.1:2021` - For ASF - user:youruser pass:yourpass (provided in initial setup)
 
+**Security Tip**:  Ensure each component, including MongoDB, is securely configured, and that ASF is accessed securely, even internally. Adhering to security best practices is crucial when implementing ASF in your security strategy.
 
 ###### Social Login 
 
