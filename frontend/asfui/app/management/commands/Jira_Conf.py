@@ -12,7 +12,9 @@ apikey = settings.JIRA_TOKEN
 server = settings.JIRA_URL
 
 
-jira = JIRA(server=server, basic_auth=(user,apikey))
+jira = None
+if settings.JIRA_ENABLED:
+    jira = JIRA(server=server, basic_auth=(user,apikey))
 
 
 def create_jira(finding_dict):
@@ -37,7 +39,7 @@ def create_jira(finding_dict):
 def jira_status(ticket_num):
     issue = jira.issue(ticket_num)
     status = issue.fields.status
-    return status    
+    return status
 
 def create_issue(query):
     if settings.JIRA_ENABLED:
